@@ -1,8 +1,11 @@
 <?php
 
+use App\LanguagePreferenceEnum;
+use App\UserRoleEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rules\Enum;
 
 return new class extends Migration
 {
@@ -17,6 +20,14 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->enum('role', UserRoleEnum::cases())->default(UserRoleEnum::USER->value);
+            $table->enum('language_preference', LanguagePreferenceEnum::cases())->default(LanguagePreferenceEnum::EN->value);
+            $table->string('contact_number')->unique()->nullable();
+            $table->decimal('latitude', 10, 7)->nullable();
+            $table->decimal('longitude', 10, 7)->nullable();
+            // disability_type
+            // mobility_issues
+            // chronic_illness
             $table->rememberToken();
             $table->timestamps();
         });

@@ -25,5 +25,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: /chairpal.42web.io/htdocs/ # For addon domains
-          timeout: 86400000
-          log-level: standard
+          # timeout: 86400000
+          # log-level: standard
+          retries: 5
+          retryDelay: 10

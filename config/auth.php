@@ -92,10 +92,21 @@ return [
 
     'passwords' => [
         'users' => [
-            'provider' => 'users',
-            'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
-            'expire' => 60,
-            'throttle' => 60,
+            'provider'  => 'users',
+            'table'     => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
+            'expire'    => env('AUTH_PASSWORD_RESET_TOKEN_EXPIRE', 180),
+            'max_times' => env('AUTH_PASSWORD_RESET_TOKEN_EXPIRE', 3),
+            'throttle'  => env('AUTH_PASSWORD_RESET_TOKEN_THROTTLE', 60),
+        ],
+    ],
+
+    'verification_codes' => [
+        'users' => [
+            'provider'  => 'users',
+            'table'     => env('AUTH_VERIFICATION_TABLE', 'users'),
+            'expire'    => env('AUTH_VERIFICATION_EXPIRE', 180),
+            'max_times' => env('AUTH_VERIFICATION_EXPIRE', 3),
+            'throttle'  => env('AUTH_VERIFICATION_THROTTLE', 60),
         ],
     ],
 

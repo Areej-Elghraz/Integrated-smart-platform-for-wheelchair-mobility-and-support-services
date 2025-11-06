@@ -18,6 +18,9 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
+            $table->string('email_verification_code')->nullable();
+            $table->tinyInteger('email_verification_times_sent')->nullable();
+            $table->timestamp('email_verification_code_expires_at')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->enum('role', UserRoleEnum::cases())->default(UserRoleEnum::USER->value);
@@ -35,6 +38,8 @@ return new class extends Migration
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');
+            $table->tinyInteger('times')->default(0);
+            $table->boolean('verified')->default(false);
             $table->timestamp('created_at')->nullable();
         });
 

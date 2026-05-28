@@ -25,7 +25,6 @@ class LocalizationCheckTest extends TestCase
             'hi' => 'श्रेणियाँ सफलतापूर्वक प्राप्त किया गया!',
             'ko' => '카테고리 검색 성공!',
             'vi' => 'Đã lấy Danh mục thành công!',
-            // 'ge' is currently German-like in files so it will likely match 'de' style
         ];
 
         foreach ($languages as $lang => $expectedMessage) {
@@ -52,8 +51,8 @@ class LocalizationCheckTest extends TestCase
             'category_id' => $category->id,
             'organization_id' => $organization->id,
             'owner_id' => $user->id,
-            'latitude' => 0,
-            'longitude' => 0
+            'x' => 0,
+            'y' => 0
         ]);
 
         $user->favorites()->attach($place->id);

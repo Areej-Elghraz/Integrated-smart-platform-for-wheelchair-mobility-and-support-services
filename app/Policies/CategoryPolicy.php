@@ -31,18 +31,15 @@ class CategoryPolicy
                 ->exists();
         }
 
-        // normal user role
-        return
-            // main categories
-            // (is_null($category->owner_id) && !$category->organizations()->exists())
-            is_null($category->owner_id)
+        if (is_null($category->owner_id) || optional($category->owner)->isOrganization() || $category->owner_id == $user->id) {
+            return true;
+        }
 
-            // categories added by any organization
-            // || $category->organizations()->exists()
-            || optional($category->owner)->isOrganization()
+        if ($user->role === 'companion') {
+            return $user->friends()->wherePivot('status', 'accepted')->where('users.id', $category->owner_id)->exists();
+        }
 
-            // categories added by this user
-            || $category->owner_id == $user->id;
+        return false;
     }
 
     /**
@@ -50,6 +47,10 @@ class CategoryPolicy
      */
     public function create(User $user, array $data): bool
     {
+        if ($user->isDoctor()) {
+            return false;
+        }
+
         if ($user->isOrganization()) {
             $org = $user->organizationRoleOrganization();
             return $org
@@ -64,6 +65,10 @@ class CategoryPolicy
      */
     public function update(User $user, Category $category): bool
     {
+        if ($user->isDoctor()) {
+            return false;
+        }
+
         if ($user->isOrganization()) {
             $org = $user->organizationRoleOrganization();
             return $org

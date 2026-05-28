@@ -59,7 +59,6 @@
       "role": "user",
       "phone": "+201087736789",
       "age": 30,
-      "follow_doctor": 1,
       "location": null,
       "image": null,
       "created_at": "2026-02-03T10:41:08.000000Z",
@@ -127,19 +126,140 @@
 {
   "user_message": {
     "sender_type": "user",
-    "content": "Hello",
+    "content": "انا حاسس بتعب ومش عارف اروح فين",
     "session_id": 1,
-    "updated_at": "2026-04-22T02:50:40.000000Z",
-    "created_at": "2026-04-22T02:50:40.000000Z",
+    "updated_at": "2026-05-28T02:50:40.000000Z",
+    "created_at": "2026-05-28T02:50:40.000000Z",
     "id": 1
   },
   "bot_message": {
     "sender_type": "bot",
-    "content": "Hi there! How can I help you today?",
+    "content": "سلامتك يا أحمد. ألاحظ أن نبضات قلبك مرتفعة قليلاً. هل تحب أن أرسل رسالة استغاثة (SOS) للمرافق الخاص بك؟",
+    "language_detected": "ar",
+    "intent": "health_complaint",
     "session_id": 1,
-    "updated_at": "2026-04-22T02:50:43.000000Z",
-    "created_at": "2026-04-22T02:50:43.000000Z",
+    "updated_at": "2026-05-28T02:50:43.000000Z",
+    "created_at": "2026-05-28T02:50:43.000000Z",
     "id": 2
+  }
+},
+
+// Floors & Maps
+// create floor
+{
+  "message": "Floor created successfully!",
+  "data": {
+    "id": 1,
+    "organization_id": 1,
+    "place_id": null,
+    "name": "Ground Floor",
+    "number": 1,
+    "created_at": "2026-05-20T14:58:20+03:00",
+    "updated_at": "2026-05-20T14:58:20+03:00"
+  }
+},
+
+// upload map
+{
+  "message": "Map created successfully!",
+  "data": {
+    "id": 1,
+    "floor_id": 1,
+    "map_file": "http://localhost/storage/maps/map.png",
+    "extension": "png",
+    "width": 100.5,
+    "height": 80.2,
+    "resolution": 0.05,
+    "origin": [-10, -10, 0],
+    "created_at": "2026-05-20T14:58:20+03:00",
+    "updated_at": "2026-05-20T14:58:20+03:00"
+  }
+},
+
+
+// Assign Wheelchair
+{
+  "message": "Wheelchair assigned successfully.",
+  "data": {
+    "id": 1,
+    "serial_number": "WCH-TEST-123",
+    "model_name": "Chairpal Premium X1",
+    "firmware_version": "1.0.0",
+    "current_status": "stopped",
+    "battery_percentage": 88,
+    "current_speed": 0.0,
+    "mode": "idle",
+    "current_floor_id": null,
+    "assigned_user_id": 1,
+    "is_online": false,
+    "last_seen_at": null,
+    "created_at": "2026-05-20T20:44:09.000000Z",
+    "updated_at": "2026-05-20T20:44:09.000000Z"
+  }
+},
+
+// Wheelchair Details
+{
+  "data": {
+    "id": 1,
+    "serial_number": "WCH-DETAILS-999",
+    "model_name": "Chairpal Lite",
+    "firmware_version": "1.2.0",
+    "current_status": "moving",
+    "battery_percentage": 45,
+    "current_speed": 1.5,
+    "mode": "manual_app",
+    "current_floor_id": null,
+    "assigned_user_id": 1,
+    "is_online": false,
+    "last_seen_at": null,
+    "created_at": "2026-05-20T20:44:09.000000Z",
+    "updated_at": "2026-05-20T20:44:09.000000Z",
+    "current_floor": null,
+    "current_vital_state": {
+      "wheelchair_id": 1,
+      "current_temperature": 36.8,
+      "current_heart_rate": 78,
+      "status": "normal",
+      "updated_at": "2026-05-20T20:44:09.000000Z"
+    },
+    "current_safety_state": {
+      "wheelchair_id": 1,
+      "fall_detected": false,
+      "abnormal_posture": true,
+      "sudden_motion_detected": false,
+      "status": "warning",
+      "updated_at": "2026-05-20T20:44:09.000000Z"
+    }
+  }
+},
+
+// Wheelchair Sensors
+{
+  "data": [
+    {
+      "id": 1,
+      "wheelchair_id": 1,
+      "sensor_type": "lidar",
+      "sensor_name": "Front LiDAR Scanner",
+      "firmware_version": "v1.1",
+      "status": "active",
+      "last_reading_time": null,
+      "created_at": "2026-05-20T20:44:09.000000Z",
+      "updated_at": "2026-05-20T20:44:09.000000Z"
+    }
+  ]
+},
+
+// Passenger Vital Ingestion
+{
+  "message": "Health state updated successfully.",
+  "data": {
+    "wheelchair_id": 1,
+    "current_temperature": 38.2,
+    "current_heart_rate": 110,
+    "status": "warning",
+    "updated_at": "2026-05-20T20:44:09.000000Z"
   }
 }
 ]

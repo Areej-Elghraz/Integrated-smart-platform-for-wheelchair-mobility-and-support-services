@@ -52,6 +52,7 @@ return [
     'doesnt_end_with' => 'The :attribute field must not end with one of the following: :values.',
     'doesnt_start_with' => 'The :attribute field must not start with one of the following: :values.',
     'email' => 'The :attribute field must be a valid email address.',
+    'encoding' => 'The :attribute field must be encoded in :encoding.',
     'ends_with' => 'The :attribute field must end with one of the following: :values.',
     'enum' => 'The selected :attribute is invalid.',
     'exists' => 'The selected :attribute is invalid.',
@@ -166,13 +167,6 @@ return [
     'ulid' => 'The :attribute field must be a valid ULID.',
     'uuid' => 'The :attribute field must be a valid UUID.',
 
-    // Custom validation messages.
-    'invalid_value'            => 'The value in :attribute is invalid!',
-    'expired_otp'              => 'The verification code has expired!',
-    'only_one_position'        => 'Only one ":position" image is allowed.',
-    'cannot_update_position'   => 'You cannot update the ":position" image position.',
-    'new_password_must_differ' => 'The new password must be different from the current one!',
-
     /*
     |--------------------------------------------------------------------------
     | Custom Validation Language Lines
@@ -201,39 +195,6 @@ return [
     |
     */
 
-    'attributes' => [
-        'name' => 'Name',
-        'input' => 'Username or Email',
-        'username' => 'Username',
-        'email' => 'Email',
-        'password' => 'Password',
-
-        'code' => 'Code',
-        'otp' => 'Verification code (OTP)',
-        'current_password' => 'Current password',
-        'new_password' => 'New password',
-
-        'phone' => 'Phone number',
-        'type' => 'Type',
-
-        'url' => 'URL',
-        'social_media' => 'Social media name',
-
-        'description' => 'Description',
-        'category_id' => 'Category',
-        'per_page' => 'Items per page',
-
-        'image' => 'Image',
-        'images' => 'Images',
-        'images.*' => 'Image',
-        'position' => 'Image position',
-        'positions' => 'Image positions',
-        'positions.*' => 'Image position',
-        'before' => 'before',
-        'after' => 'after',
-
-        'all_devices' => 'Logout from all devices',
-        'include' => 'Relations',
-    ],
+    'attributes' => [],
 
 ];

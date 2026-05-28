@@ -25,6 +25,8 @@ return [
     'comment'      => ['singular' => 'التعليق', 'plural'  => 'التعليقات'],
     'language'     => ['singular' => 'اللغة', 'plural'  => 'اللغات'],
     'visitor'      => ['singular' => 'الزيارة',               'plural'  => 'الزيارات'],
+    'floor'        => ['singular' => 'الطابق',               'plural'  => 'الطوابق'],
+    'map'          => ['singular' => 'الخريطة',              'plural'  => 'الخرائط'],
   ],
 
   'actions' => [

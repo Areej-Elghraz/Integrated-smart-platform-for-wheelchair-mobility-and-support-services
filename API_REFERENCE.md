@@ -1,122 +1,271 @@
-# ChairPal API Reference: AI / HW Communication Layer
+# ChairPal API Reference: Real-Time Movement, Health, & Community
 
-This document provides a detailed reference for all endpoints related to the wheelchair hardware and AI coordination.
+This document provides a detailed reference for all endpoints related to wheelchair management, trip execution, sensor health tracking, and community engagement.
 
-## Intelligent Backbone Architecture
+## 0. Related Architecture Documentation
 
-ChairPal uses an advanced **Event-Driven Intelligence** architecture:
-1. **Event Normalization**: All incoming data (health, emergency, hardware) is normalized into a `UnifiedSystemEvent`.
-2. **Deterministic Decision Engine**: A stateless `SystemPolicyEngine` decides on the best course of action (escalation, notification, trip pause).
-3. **Guarded State Machine**: All trip state transitions are validated by a `TripStateMachine` with strict safety guards (e.g., blocking resume if a device is offline).
-4. **Side-effect Isolation**: Decisions are separated from execution, ensuring the system remains predictable and auditable.
-5. **Event Deduplication**: An atomic deduplication layer ensures that each event (identified by its unique hash) is processed exactly once, protecting against hardware retries or network duplication.
+Before reviewing the API endpoints, please check out these specialized documentation files which describe the architecture and workflows in detail:
+- **[MQTT Architecture & Manual/Autonomous Flows](docs_mqtt_architecture.md)**
+- **[Dashboards & Real-time Aggregation](docs_dashboards.md)**
+- **[Places & Geometric Center Calculation](docs_places.md)**
+- **[Floors, Maps & Policy Restrictions](docs_floors_maps.md)**
+- **[Wheelchair Hardware & WebSockets](docs_wheelchairs.md)**
 
----
+## 0.5 Authentication & Tokens
 
-## 1. Trip Management
+All protected endpoints require an `access_token` passed in the `Authorization: Bearer <token>` header.
 
-### Initiate a New Trip
-`POST /api/trips`
+When you login via `POST /api/auth/login`, you receive:
 
-| Parameter | Type | Required | Description / Options |
-| :--- | :--- | :--- | :--- |
-| `e_chair_id` | Integer | Yes | The unique ID of the wheelchair. |
-| `start_location` | JSON | Yes | Extensible object. E.g., `{"type": "gps", "lat": 30, "lng": 31}`. |
-| `end_location` | JSON | Yes | Extensible object. E.g., `{"type": "indoor", "x": 10, "y": 5, "floor": 2}`. |
-| `navigation_mode` | String | No | Options: `manual` (default), `autonomous`, `assisted`. |
-| `metadata` | JSON | No | Additional trip context like reason or user notes. |
+- `access_token`: Short-lived token for API requests.
+- `remember_token`: Used to retrieve a new `access_token` when it expires via `POST /api/auth/refresh`.
 
----
+## 1. Wheelchair Management
 
-### Add Trip Update
-`POST /api/trips/{trip}/updates`
+### Handshake (Hardware Boot Initialization)
 
-| Parameter | Type | Required | Description / Options |
-| :--- | :--- | :--- | :--- |
-| `update_type` | String | Yes | The nature of the update (e.g., `waypoint_reached`, `reroute`). |
-| `source` | String | Yes | Who initiated the update. Options: `user`, `ai`, `assistant`, `system`. |
-| `update_data` | JSON | No | Contextual details about the update. |
-| `timestamp_ms` | BigInt | Yes | 13-digit Unix timestamp for global timeline synchronization. |
+`GET /api/wheelchairs/handshake`
 
----
+| Parameter       | Type   | Required | Description                                     | Example     |
+| :-------------- | :----- | :------- | :---------------------------------------------- | :---------- |
+| `serial_number` | String | Yes      | The serial number of the wheelchair to connect. | `CHAIR-001` |
 
-## 2. AI / HW Ingestion (Asynchronous)
+### Connect Wheelchair
 
-### Wheelchair Telemetry
-`POST /api/ai-hw/telemetry`
+`POST /api/wheelchairs/connect`
 
-| Parameter | Type | Required | Description / Options |
-| :--- | :--- | :--- | :--- |
-| `e_chair_id` | Integer | Yes | The wheelchair ID. |
-| `position_data` | JSON | Yes | Extensible position (GPS or Indoor). Must include `type`. |
-| `speed` | Float | No | Current speed in meters per second (m/s). |
-| `battery_level` | Integer | No | Battery percentage (0-100). |
-| `timestamp_ms` | BigInt | Yes | High-precision sync timestamp. |
+| Parameter       | Type   | Required | Description                                     | Example     |
+| :-------------- | :----- | :------- | :---------------------------------------------- | :---------- |
+| `serial_number` | String | Yes      | The serial number of the wheelchair to connect. | `CHAIR-001` |
 
----
+### Disconnect Wheelchair
 
-### AI Status & Decisions
-`POST /api/ai-hw/ai-logs`
+`POST /api/wheelchairs/{wheelchairId}/disconnect`
 
-| Parameter | Type | Required | Description / Options |
-| :--- | :--- | :--- | :--- |
-| `e_chair_id` | Integer | Yes | The wheelchair ID. |
-| `event_type` | String | Yes | Options: `reroute`, `safety_override`, `rejected_command`, `local_stop`. |
-| `component_name` | String | Yes | The AI module name (e.g., `pathfinder_v1`, `lidar_guard`). |
-| `decision_context` | JSON | No | The world state at decision time (e.g., obstacle distance). |
-| `timestamp_ms` | BigInt | Yes | High-precision sync timestamp. |
+### Update Wheelchair Details
+
+`PUT /api/wheelchairs/{wheelchairId}`
+
+| Parameter          | Type   | Required | Description                           | Example  |
+| :----------------- | :----- | :------- | :------------------------------------ | :------- |
+| `battery`          | Float  | No       | Battery percentage/voltage remaining. | `85.5`   |
+| `voltage`          | Float  | No       | Current voltage reading.              | `24.0`   |
+| `current`          | Float  | No       | Current draw in Amperes.              | `2.3`    |
+| `temperature`      | Float  | No       | Device temperature reading.           | `32.1`   |
+| `connection_state` | String | No       | `online` or `offline`.                | `online` |
+
+### Unassign Wheelchair
+
+`POST /api/wheelchairs/{wheelchairId}/unassign`
 
 ---
 
-### Health Sensor Data (Raw)
-`POST /api/ai-hw/health-telemetry`
+## 2. Trip Management
 
-| Parameter | Type | Required | Description / Options |
-| :--- | :--- | :--- | :--- |
-| `e_chair_id` | Integer | Yes | The wheelchair ID. |
-| `type` | String | Yes | Sensor type. E.g., `heart_rate`, `temperature`, `motion`. |
-| `value` | Float | Yes | The raw numerical value. |
-| `sensor_status` | String | Yes | Reliability check. Options: `valid`, `noisy`, `disconnected`. |
-| `timestamp_ms` | BigInt | Yes | High-precision sync timestamp. |
+### Start Trip
 
----
+`POST /api/wheelchairs/{wheelchairId}/trips`
 
-### Health Predictions (AI Inferred)
-`POST /api/ai-hw/health-predictions`
+| Parameter | Type   | Required | Description                      |
+| :-------- | :----- | :------- | :------------------------------- |
+| `mode`    | String | Yes      | Options: `autonomous`, `manual`. |
 
-| Parameter | Type | Required | Description / Options |
-| :--- | :--- | :--- | :--- |
-| `e_chair_id` | Integer | Yes | The wheelchair ID. |
-| `prediction_type` | String | Yes | Options: `fainting`, `fall`, `posture_anomaly`. |
-| `confidence` | Float | Yes | Probability value between `0.0` and `1.0`. |
-| `is_critical` | Boolean | Yes | `true` if immediate intervention is required. |
-| `source_model` | String | Yes | The specific AI model ID that made the prediction. |
-| `prediction_window_ms` | Integer | No | Duration of data used for this prediction in milliseconds. |
-| `timestamp_ms` | BigInt | Yes | High-precision sync timestamp. |
+### End Trip
 
----
+`POST /api/trips/{tripId}/end`
 
-### Emergency Events
-`POST /api/ai-hw/emergency`
+### Update Trip Movement State
 
-| Parameter | Type | Required | Description / Options |
-| :--- | :--- | :--- | :--- |
-| `e_chair_id` | Integer | Yes | The wheelchair ID. |
-| `event_type` | String | Yes | The type of emergency (e.g., `collision`, `fall_detected`). |
-| `source_classification`| String | Yes | Options: `obstacle`, `health`, `hardware`, `connectivity`, `battery`, `ai_failure`. |
-| `severity` | String | Yes | Impact level. Options: `info`, `warning`, `critical`. |
-| `timestamp_ms` | BigInt | Yes | High-precision sync timestamp. |
+`POST /api/trips/{tripId}/movement-states`
+
+| Parameter           | Type    | Required | Description                   |
+| :------------------ | :------ | :------- | :---------------------------- |
+| `movement_status`   | String  | Yes      | `moving` or `idle`.           |
+| `speed`             | Float   | Yes      | Speed of wheelchair.          |
+| `position`          | JSON    | Yes      | Coordinate data (x, y, etc).  |
+| `theta`             | Float   | Yes      | Orientation angle.            |
+| `mode`              | String  | Yes      | `autonomous` or `manual`.     |
+| `risk_level`        | String  | Yes      | `low`, `medium`, or `high`.   |
+| `obstacle_detected` | Boolean | Yes      | True if obstacle detected.    |
+| `obstacle_distance` | Float   | Yes      | Distance to closest obstacle. |
+
+### Get Trip Movement State
+
+`GET /api/trips/{tripId}/movement-states`
 
 ---
 
-## 3. Device Health
+## 3. Sensors & Health Vitals
 
-### Device Connection Status
-`POST /api/ai-hw/device-status`
+### Store Sensor Reading (Aggregated Windows)
 
-| Parameter | Type | Required | Description / Options |
-| :--- | :--- | :--- | :--- |
-| `e_chair_id` | Integer | Yes | The wheelchair ID. |
-| `device_name` | String | Yes | Component name (e.g., `Lidar`, `Heart_Sensor`, `Motors`). |
-| `connection_status` | String | Yes | Options: `online`, `offline`, `reconnecting`, `degraded_connection`. |
-| `firmware_version` | String | No | The current firmware version of the component. |
+`POST /api/wheelchairs/{wheelchairId}/sensor-readings`
+
+| Parameter         | Type    | Required | Description           | Example                |
+| :---------------- | :------ | :------- | :-------------------- | :--------------------- |
+| `trip_id`         | Integer | No       | ID of active trip.    | `1`                    |
+| `heart_rate_min`  | Float   | No       | Minimum HR in window. | `60`                   |
+| `heart_rate_max`  | Float   | No       | Maximum HR in window. | `85`                   |
+| `heart_rate_avg`  | Float   | No       | Average HR in window. | `72.5`                 |
+| `temperature_min` | Float   | No       | Min temp.             | `36.5`                 |
+| `temperature_max` | Float   | No       | Max temp.             | `37.0`                 |
+| `temperature_avg` | Float   | No       | Avg temp.             | `36.7`                 |
+| `mpu_angle_min`   | Float   | No       | Min tilt angle.       | `-5.0`                 |
+| `mpu_angle_max`   | Float   | No       | Max tilt angle.       | `10.0`                 |
+| `mpu_angle_avg`   | Float   | No       | Avg tilt angle.       | `2.3`                  |
+| `reading_time`    | Date    | Yes      | ISO 8601 timestamp.   | `2026-05-25T12:00:00Z` |
+
+### Get Sensor Reading (Aggregated Windows)
+
+`GET /api/wheelchairs/{wheelchairId}/sensor-readings`
+
+### Update Vitals
+
+`POST /api/wheelchairs/{wheelchairId}/vitals`
+
+| Parameter            | Type    | Required | Description                    |
+| :------------------- | :------ | :------- | :----------------------------- |
+| `heart_rate`         | Float   | Yes      | User heart rate.               |
+| `heart_rate_status`  | String  | Yes      | `normal`, `medium`, `critical`.|
+| `temperature`        | Float   | Yes      | Body temperature.              |
+| `temperature_status` | String  | Yes      | `normal`, `medium`, `critical`.|
+| `mpu_angle`          | Float   | Yes      | Tilt angle to detect falls.    |
+| `fall_status`        | String  | Yes      | `normal`, `medium`, `critical`. Automatically triggers SOS if critical. |
+| `type`               | String  | No       | defaults to 'health'.          |
+| `risk_level`         | String  | Yes      | `normal`, `medium`, `critical`.|
+| `reason`             | String  | No       | Explanation for risk level.    |
+| `recommendation`     | String  | No       | Actions to take.               |
+
+---
+
+## 4. Events System
+
+### Store Trip Event
+
+`POST /api/trips/{tripId}/events`
+Supports automated deduplication for recurring system events.
+
+| Parameter      | Type   | Required | Description                             |
+| :------------- | :----- | :------- | :-------------------------------------- |
+| `type`         | String | Yes      | `health`, `obstacle`, `sos`, `battery`. |
+| `severity`     | String | Yes      | `normal`, `medium`, `critical`.         |
+| `message`      | String | Yes      | Human-readable event description.       |
+| `data`         | JSON   | Yes      | Technical payload.                      |
+| `event_source` | String | No       | `ai` (default) or `system`.             |
+
+---
+
+## 5. Dashboards
+
+Real-time role-based dashboards pushed via Reverb (`dashboard.{userId}`) and queried directly:
+
+- `GET /api/dashboard/user`
+- `GET /api/dashboard/companion`
+- `GET /api/dashboard/doctor`
+
+---
+
+## 6. Community & Chat
+
+- **Real-Time Push:** Events broadcast over Laravel Reverb channels.
+- **Database Notifications:** Stored in `notifications` table for read/unread history.
+
+### Friend Requests
+
+`POST /api/community/friends/send`
+
+- Payload: `{ "user_id": 42 }`
+- Event: `friend.request.received`
+
+`POST /api/community/friends/{userId}/handle`
+
+- Payload: `{ "action": "accept" }`
+- Event: `friend.request.accepted`
+- Result: Opens a chat conversation dynamically.
+
+### Chats & Posts
+
+- `POST /api/chats/{userId}/messages` -> Fires `message.sent`
+- `POST /api/posts` -> Fires `post.created`
+- `POST /api/posts/{postId}/like` -> Fires `post.liked`
+
+---
+
+## 7. AI ChatBot (Context-Aware Medical Assistant)
+
+The chatbot is a **specialized medical & navigational assistant** built with **fastText** for automatic language detection (Arabic / English). The Flutter app sends **only the user's message**. Laravel collects all context data behind the scenes and sends it to the Python AI service.
+
+### Chat with Bot
+
+`POST /api/chatbot/sessions/{session}/chat`
+
+| Parameter | Type   | Required | Description                |
+| :-------- | :----- | :------- | :------------------------- |
+| `message` | String | Yes*     | User's text message.       |
+| `media`   | File[] | No       | Optional image/audio files.|
+
+*Required if `media` is not provided.
+
+**What Flutter sends:**
+```json
+{ "message": "انا حاسس بتعب ومش عارف اروح فين" }
+```
+
+**What Laravel builds and sends to Python AI (hidden from Flutter):**
+```json
+{
+  "user_text": "انا حاسس بتعب ومش عارف اروح فين",
+  "context": {
+    "user_profile": { "name": "Ahmed", "medical_condition": "Lower Body Paralysis", "age": 28, "weight": 70, "gender": "male" },
+    "relations": {
+      "doctor": { "name": "Dr. Smith", "phone": "+201111111" },
+      "companions": [{ "name": "Mona", "phone": "+201222222" }]
+    },
+    "wheelchair_status": { "serial_number": "CHAIR-001", "battery": 80, "connection": "online" },
+    "current_health_state": {
+      "heart_rate": 110, "temperature": 37.5,
+      "mpu_monitoring": { "angle": 45, "fall_detected": true }
+    },
+    "current_trip": { "is_active": true, "destination": "Hospital", "current_coordinates": { "x": 10.5, "y": 20.2 } },
+    "latest_alerts": {
+      "heart": { "message": "High Heart Rate Detected", "severity": "critical", "timestamp": "2026-05-28T13:10:00Z" },
+      "temperature": null,
+      "mpu_monitoring": { "message": "High Fall Risk", "severity": "critical", "timestamp": "2026-05-28T13:15:00Z" },
+      "obstacle": { "message": "Stairs ahead", "severity": "medium", "timestamp": "2026-05-28T09:50:00Z" },
+      "sos": null,
+      "battery": { "message": "Battery below 20%", "severity": "medium", "timestamp": "2026-05-28T08:00:00Z" }
+    }
+  }
+}
+```
+
+### Session Management
+
+| Endpoint | Method | Description |
+|:---|:---|:---|
+| `/api/chatbot/sessions` | `GET` | List all chatbot sessions |
+| `/api/chatbot/sessions` | `POST` | Create a new session |
+| `/api/chatbot/sessions/{session}` | `GET` | View session with messages |
+| `/api/chatbot/sessions/{session}` | `DELETE` | Delete a session |
+| `/api/chatbot/messages/{message}/reaction` | `POST` | Like/dislike a bot message |
+
+---
+
+## 8. System Maintenance (Artisan Commands)
+
+| Command | Schedule | Description |
+|:---|:---|:---|
+| `php artisan data:cleanup` | Daily | Deletes old movement states (>1 month), events (>3 months), aggregated sensor readings (>1 year). |
+| `php artisan files:clean-orphans` | Manual | Scans `storage/app/public` and deletes any file not linked in the database (Users, Organizations, Places, Categories, Messages, Posts). |
+
+### Orphan File Protection (Model Observers)
+
+All models with image/file columns have `booted()` observers that automatically delete associated files from storage when a record is deleted via Eloquent:
+- `User` → `image`
+- `Organization` → `image`
+- `Place` → `image`
+- `Category` → `image`
+- `Message` → `attachment`
+- `ChatMessage` → `attachments` (JSON array)
+- `Post` → `images` + `files` (JSON arrays)
+

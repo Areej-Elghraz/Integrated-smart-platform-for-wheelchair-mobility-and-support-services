@@ -24,8 +24,6 @@ class PlaceResource extends JsonResource
             'name' => $this->name,
             'description' => $this->description, // Verify if description exists in model/migration
             'image' => $this->image,
-            'latitude' => $this->latitude,
-            'longitude' => $this->longitude,
             'accessibility_data' => $this->accessibility_data,
             'category_id' => $this->category_id,
             'organization_id' => $this->organization_id,

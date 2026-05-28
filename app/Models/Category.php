@@ -15,6 +15,15 @@ class Category extends Model
 {
     use HasFactory, HasOptionalRelations;
 
+    protected static function booted()
+    {
+        static::deleting(function ($category) {
+            if ($category->getRawOriginal('image') && \Illuminate\Support\Facades\Storage::disk('public')->exists($category->getRawOriginal('image'))) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($category->getRawOriginal('image'));
+            }
+        });
+    }
+
     protected $fillable = [
         'name',
         'parent_id',

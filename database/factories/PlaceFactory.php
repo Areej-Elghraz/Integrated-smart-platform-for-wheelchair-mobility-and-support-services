@@ -16,8 +16,6 @@ class PlaceFactory extends Factory
             'description' => fake()->paragraph(),
             'organization_id' => \App\Models\Organization::factory(),
             'owner_id' => \App\Models\User::factory(),
-            'latitude' => fake()->latitude(),
-            'longitude' => fake()->longitude(),
         ];
     }
 }

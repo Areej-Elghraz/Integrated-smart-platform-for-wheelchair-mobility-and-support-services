@@ -10,7 +10,8 @@
       "email": "jane@example.com",
       "password": "password123",
       "password_confirmation": "password123",
-      "role": "user"
+      "role": "user",
+      "medical_condition_ids": [1, 2]
     },
     "response": {
       "message": "Welcome to ChairPal! Please verify your email with the code we’ve sent to you.",
@@ -143,6 +144,11 @@
     "request": {
       "name": "Jane Doe updated",
       "phone": "+1234567890",
+      "gender": "female",
+      "birth_date": "1990-05-15",
+      "weight": 65,
+      "height": 160,
+      "medical_condition_ids": [1, 2],
       "image": "(file upload optional)"
     },
     "response": {
@@ -150,7 +156,11 @@
       "data": {
         "id": 1,
         "name": "Jane Doe updated",
-        "phone": "+1234567890"
+        "phone": "+1234567890",
+        "gender": "female",
+        "birth_date": "1990-05-15",
+        "weight": 65,
+        "height": 160
       }
     }
   },
@@ -577,11 +587,14 @@
     }
   },
   // ==========================
-  // CHATBOT
+  // CHATBOT (Context-Aware AI Assistant - FastText)
   // ==========================
+  // السيناريو: الفلاتر يبعت الرسالة فقط. لارافل بيجمع كل بيانات المستخدم وحالته الصحية والكرسي والرحلة
+  // ويبعتهم سراً مع الرسالة للـ Python AI عشان يرد رد طبي ذكي ودقيق.
+  // البوت يكتشف اللغة (عربي/إنجليزي) تلقائياً عبر fastText - لا حاجة لإرسال بارامتر language.
   {
     "endpoint": "GET /api/chatbot/sessions",
-    "description": "Get all chatbot sessions for the user",
+    "description": "Get all chatbot sessions for the authenticated user",
     "request": {},
     "response": {
       "message": "Chat sessions retrieved successfully.",
@@ -622,7 +635,12 @@
           {
             "id": 1,
             "sender_type": "user",
-            "content": "Hello bot"
+            "content": "انا حاسس بتعب"
+          },
+          {
+            "id": 2,
+            "sender_type": "bot",
+            "content": "سلامتك يا أحمد. ألاحظ أن نبضات قلبك مرتفعة."
           }
         ]
       }
@@ -639,31 +657,72 @@
   },
   {
     "endpoint": "POST /api/chatbot/sessions/{session}/chat",
-    "description": "Send a message or media to the chatbot and get a response",
+    "description": "Send a message to the AI chatbot. Flutter sends ONLY the message. Laravel automatically collects user profile, health state, wheelchair status, trip info, doctor, companions, and latest alerts and sends them as hidden context to the Python AI service.",
     "request": {
-      "message": "Hello bot",
-      "media": "(file upload optional array)",
-      "system_message": "You are a friendly Chatbot.",
-      "max_tokens": 512,
-      "temperature": 0.7,
-      "top_p": 0.95
+      "message": "انا حاسس بتعب ومش عارف اروح فين",
+      "media": "(file upload optional array)"
+    },
+    // هذا الكائن لا يرسله الفلاتر — لارافل يبنيه تلقائياً ويرسله للبايثون خلف الكواليس
+    "backend_context_payload_sent_to_ai": {
+      "user_text": "انا حاسس بتعب ومش عارف اروح فين",
+      "context": {
+        "user_profile": {
+          "name": "Ahmed",
+          "medical_condition": "Lower Body Paralysis",
+          "age": 28,
+          "weight": 70,
+          "gender": "male"
+        },
+        "relations": {
+          "doctor": { "name": "Dr. Smith", "phone": "+201111111" },
+          "companions": [
+            { "name": "Mona", "phone": "+201222222" }
+          ]
+        },
+        "wheelchair_status": {
+          "serial_number": "CHAIR-001",
+          "battery": 80,
+          "connection": "online"
+        },
+        "current_health_state": {
+          "heart_rate": 110,
+          "temperature": 37.5,
+          "mpu_monitoring": {
+            "angle": 45,
+            "fall_detected": true
+          }
+        },
+        "current_trip": {
+          "is_active": true,
+          "destination": "Hospital",
+          "current_coordinates": { "x": 10.5, "y": 20.2 }
+        },
+        "latest_alerts": {
+          "heart": { "message": "High Heart Rate Detected", "severity": "critical", "timestamp": "2026-05-28T13:10:00Z" },
+          "temperature": null,
+          "mpu_monitoring": { "message": "High Fall Risk", "severity": "critical", "timestamp": "2026-05-28T13:15:00Z" },
+          "obstacle": { "message": "Stairs ahead", "severity": "medium", "timestamp": "2026-05-28T09:50:00Z" },
+          "sos": null,
+          "battery": { "message": "Battery below 20%", "severity": "medium", "timestamp": "2026-05-28T08:00:00Z" }
+        }
+      }
     },
     "response": {
       "user_message": {
         "id": 1,
         "sender_type": "user",
-        "content": "Hello bot"
+        "content": "انا حاسس بتعب ومش عارف اروح فين"
       },
       "bot_message": {
         "id": 2,
         "sender_type": "bot",
-        "content": "Hello! How can I help you today?"
+        "content": "سلامتك يا أحمد. ألاحظ أن نبضات قلبك مرتفعة قليلاً وبطاريتك كويسة. هل تحب أن أرسل رسالة استغاثة (SOS) للمرافقة منى؟"
       }
     }
   },
   {
     "endpoint": "POST /api/chatbot/messages/{message}/reaction",
-    "description": "Like or dislike a message in the session",
+    "description": "Like or dislike a bot message in the session",
     "request": {
       "reaction": "like"
     },
@@ -726,83 +785,176 @@
     }
   },
   // ==========================
-  // AI / HW COMMUNICATION
+  // WHEELCHAIRS & EVENTS (PHASE 2)
   // ==========================
   {
-    "endpoint": "POST /api/ai-hw/telemetry",
-    "description": "Ingest wheelchair telemetry (Asynchronous)",
+    "endpoint": "POST /api/wheelchairs/connect",
+    "description": "Connect Wheelchair",
     "request": {
-      "e_chair_id": 1,
-      "position_data": { "type": "gps", "lat": 30.0444, "lng": 31.2357 },
-      "speed": 1.5,
-      "battery_level": 85,
-      "timestamp_ms": 1715241600000
+      "serial_number": "CHAIR-001"
     },
     "response": {
-      "message": "Telemetry ingested",
-      "data": { "telemetry": { "id": 1 } }
+      "message": "Wheelchair connected successfully.",
+      "data": {
+        "wheelchair": {
+          "id": 1,
+          "serial_number": "CHAIR-001",
+          "connection_state": "online"
+        }
+      }
     }
   },
   {
-    "endpoint": "POST /api/ai-hw/ai-logs",
-    "description": "Ingest AI status and decision logs",
+    "endpoint": "PUT /api/wheelchairs/{wheelchairId}",
+    "description": "Update Wheelchair Data",
     "request": {
-      "e_chair_id": 1,
-      "event_type": "safety_override",
-      "component_name": "obstacle_avoidance",
-      "decision_context": { "obstacle_distance": 0.5, "speed": 1.2 },
-      "timestamp_ms": 1715241600000
+      "battery": 85.5,
+      "voltage": 24.0,
+      "current": 2.3,
+      "temperature": 32.1,
+      "connection_state": "online"
     },
     "response": {
-      "message": "AI log ingested",
-      "data": { "log": { "id": 1 } }
+      "message": "Wheelchair updated successfully.",
+      "data": {
+        "wheelchair": {
+          "id": 1,
+          "battery": 85.5,
+          "voltage": 24.0,
+          "connection_state": "online"
+        }
+      }
     }
   },
   {
-    "endpoint": "POST /api/ai-hw/health-telemetry",
-    "description": "Ingest raw health sensor data",
+    "endpoint": "POST /api/wheelchairs/{wheelchairId}/sensor-readings",
+    "description": "Store Aggregated Sensor Readings",
     "request": {
-      "e_chair_id": 1,
-      "type": "heart_rate",
-      "value": 75,
-      "sensor_status": "valid",
-      "timestamp_ms": 1715241600000
+      "trip_id": 1,
+      "heart_rate_min": 60,
+      "heart_rate_max": 85,
+      "heart_rate_avg": 72.5,
+      "temperature_min": 36.5,
+      "temperature_max": 37.0,
+      "temperature_avg": 36.7,
+      "mpu_angle_min": -5.0,
+      "mpu_angle_max": 10.0,
+      "mpu_angle_avg": 2.3,
+      "reading_time": "2026-05-25T12:00:00Z"
     },
     "response": {
-      "message": "Health sensor log ingested",
-      "data": { "log": { "id": 1 } }
+      "message": "Sensor reading stored successfully.",
+      "data": {
+        "reading": {
+          "id": 1,
+          "wheelchair_id": 1,
+          "heart_rate_avg": 72.5
+        }
+      }
     }
   },
   {
-    "endpoint": "POST /api/ai-hw/health-predictions",
-    "description": "Ingest AI-inferred health states",
+    "endpoint": "POST /api/trips/{tripId}/events",
+    "description": "Store Event",
     "request": {
-      "e_chair_id": 1,
-      "prediction_type": "fainting",
-      "confidence": 0.92,
-      "is_critical": true,
-      "source_model": "vitals_v1",
-      "prediction_window_ms": 5000,
-      "timestamp_ms": 1715241600000
+      "type": "health",
+      "severity": "medium",
+      "message": "Elevated heart rate detected.",
+      "data": { "hr": 110 },
+      "event_source": "ai"
     },
     "response": {
-      "message": "Health prediction ingested",
-      "data": { "prediction": { "id": 1 } }
+      "message": "Event stored successfully.",
+      "data": {
+        "event": {
+          "id": 1,
+          "type": "health",
+          "severity": "medium",
+          "resolved_at": null
+        }
+      }
     }
   },
   {
-    "endpoint": "POST /api/ai-hw/emergency",
-    "description": "Log an emergency event and trigger notifications",
+    "endpoint": "POST /api/wheelchairs/{wheelchairId}/disconnect",
+    "description": "Disconnect Wheelchair",
+    "request": {},
+    "response": {
+      "message": "Wheelchair disconnected successfully.",
+      "data": {
+        "wheelchair": {
+          "id": 1,
+          "connection_state": "offline"
+        }
+    }
+  },
+  // ==========================
+  // DASHBOARDS & SOS (PHASE 3)
+  // ==========================
+  {
+    "endpoint": "GET /api/dashboard",
+    "description": "Get User Dashboard data (used by patient, companion, or doctor)",
     "request": {
-      "e_chair_id": 1,
-      "event_type": "fall_detected",
-      "source_classification": "health",
-      "severity": "critical",
-      "timestamp_ms": 1715241600000
+      "query_parameters": {
+        "user_id": "integer (optional, required if requested by companion/doctor)",
+        "filter": "string (today, last_week, last_month, last_year)",
+        "limit": "integer (optional)"
+      }
     },
     "response": {
-      "message": "Emergency event recorded",
-      "data": { "emergency": { "id": 1 } }
+      "message": "User dashboard data retrieved.",
+      "data": {
+        "current_vital_data": { "heart_rate": 75, "risk_level": "normal" },
+        "overviews": { "heart_rate": {}, "temperature": {}, "movement": {} },
+        "recent_alerts": { "health": {}, "system": {} },
+        "ai_recommendation": "Everything looks good.",
+        "last_visited_places": [],
+        "last_trip_updates": null
+      }
+    }
+  },
+  {
+    "endpoint": "GET /api/dashboard/companion",
+    "description": "Get Companion Dashboard data (list of patients)",
+    "request": {},
+    "response": {
+      "message": "Companion dashboard data retrieved.",
+      "data": {
+        "patients": []
+      }
+    }
+  },
+  {
+    "endpoint": "GET /api/dashboard/doctor",
+    "description": "Get Doctor Dashboard data (statistics and patients)",
+    "request": {},
+    "response": {
+      "message": "Doctor dashboard data retrieved.",
+      "data": {
+        "statistics": { "total": 5, "normal": 4, "medium": 1, "critical": 0 },
+        "patients": []
+      }
+    }
+  },
+  {
+    "endpoint": "POST /api/sos",
+    "description": "Trigger Emergency SOS",
+    "request": {
+      "latitude": 30.0444,
+      "longitude": 31.2357,
+      "message": "Help me!"
+    },
+    "response": {
+      "message": "SOS alert sent to 3 connected users.",
+      "triggered_to": 3
+    }
+  },
+  {
+    "endpoint": "DELETE /api/community/friends/{user}/remove",
+    "description": "Remove accepted friend connection",
+    "request": {},
+    "response": {
+      "message": "Friend removed successfully."
     }
   }
 ]

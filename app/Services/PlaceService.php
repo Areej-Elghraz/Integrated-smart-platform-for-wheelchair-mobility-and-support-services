@@ -40,10 +40,12 @@ class PlaceService
             $categoryId = $category['id'];
         }
 
-        if (isset($data['country_name']) && isset($data['city_name'])) {
-            $geoData = $this->geoService->getOrCreateGeoData($data['country_name'], $data['city_name']);
-            $data['country_id'] = $geoData['country_id'];
-            $data['city_id'] = $geoData['city_id'];
+        if (!isset($data['country_id']) && !isset($data['city_id'])) {
+            if (isset($data['country_name']) && isset($data['city_name'])) {
+                $geoData = $this->geoService->getOrCreateGeoData($data['country_name'], $data['city_name']);
+                $data['country_id'] = $geoData['country_id'];
+                $data['city_id'] = $geoData['city_id'];
+            }
         }
 
         return \Illuminate\Support\Facades\DB::transaction(function () use ($user, $data, $imagePath, $with, $categoryId) {
@@ -51,6 +53,20 @@ class PlaceService
 
             if (!is_null($imagePath)) {
                 $data['image'] = $imagePath;
+            }
+
+            // Calculate center_x and center_y from points if x and y are not set
+            if (isset($data['points']) && is_array($data['points']) && count($data['points']) > 0) {
+                if (!isset($data['x']) || !isset($data['y'])) {
+                    $sumX = 0;
+                    $sumY = 0;
+                    foreach ($data['points'] as $point) {
+                        $sumX += $point['x'] ?? 0;
+                        $sumY += $point['y'] ?? 0;
+                    }
+                    $data['x'] = $sumX / count($data['points']);
+                    $data['y'] = $sumY / count($data['points']);
+                }
             }
 
             $place = Place::create($data);
@@ -87,15 +103,31 @@ class PlaceService
             $categoryId = $category->id;
         }
 
-        if (!empty($data['country_name']) && !empty($data['city_name'])) {
-            $geoData = $this->geoService->getOrCreateGeoData($data['country_name'], $data['city_name']);
-            $data['country_id'] = $geoData['country_id'];
-            $data['city_id'] = $geoData['city_id'];
+        if (!isset($data['country_id']) && !isset($data['city_id'])) {
+            if (!empty($data['country_name']) && !empty($data['city_name'])) {
+                $geoData = $this->geoService->getOrCreateGeoData($data['country_name'], $data['city_name']);
+                $data['country_id'] = $geoData['country_id'];
+                $data['city_id'] = $geoData['city_id'];
+            }
         }
 
         return \Illuminate\Support\Facades\DB::transaction(function () use ($user, $place, $data, $imagePath, $with, $categoryId) {
             if (!is_null($imagePath)) {
                 $data['image'] = $imagePath;
+            }
+
+            // Calculate center_x and center_y from points if x and y are not set
+            if (isset($data['points']) && is_array($data['points']) && count($data['points']) > 0) {
+                if (!isset($data['x']) || !isset($data['y'])) {
+                    $sumX = 0;
+                    $sumY = 0;
+                    foreach ($data['points'] as $point) {
+                        $sumX += $point['x'] ?? 0;
+                        $sumY += $point['y'] ?? 0;
+                    }
+                    $data['x'] = $sumX / count($data['points']);
+                    $data['y'] = $sumY / count($data['points']);
+                }
             }
 
             $place->update($data);
@@ -243,8 +275,11 @@ class PlaceService
             $query = $user->favorites()->with($with ?: []);
 
             if (!empty($filters['pagination'])) {
-                $paginated = $query->cursorPaginate((int) $filters['pagination'] ?? 15)->toArray();
-                return $paginated; // This contains 'data', 'next_cursor', etc.
+                $paginated = $query->paginate((int) $filters['pagination'] ?: 15);
+                return [
+                    'data' => $paginated->items(),
+                    'total' => $paginated->total(),
+                ];
             }
             if (!empty($filters['limit'])) {
                 $query->limit($filters['limit']);

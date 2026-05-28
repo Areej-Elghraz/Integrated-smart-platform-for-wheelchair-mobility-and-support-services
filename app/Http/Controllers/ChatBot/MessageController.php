@@ -111,9 +111,81 @@ class MessageController extends ApiController
             'attachments' => !empty($attachments) ? $attachments : null,
         ]);
 
-        // 2. Call the HF space bot API
+        // 2. Build the System Context Payload
+        $user = $request->user();
+        $wheelchair = $user->wheelchairs()->first();
+
+        $friends = $user->friends; // Uses the attribute we defined
+        $doctor = $friends->where('role', 'doctor')->first();
+        $companions = $friends->where('role', 'companion')->map(fn($c) => ['name' => $c->name, 'phone' => $c->phone])->values();
+
+        $medicalConditions = $user->medicalConditions->pluck('name')->implode(' / ');
+
+        $currentTrip = null;
+        $vitalState = null;
+        $latestAlerts = [];
+
+        if ($wheelchair) {
+            $trip = $wheelchair->trips()->where('status', 'in_progress')->first();
+            if ($trip) {
+                $currentTrip = [
+                    'is_active' => true,
+                    'start_location' => 'Unknown',
+                    'destination' => $trip->destination_place_id ? 'Place ID: ' . $trip->destination_place_id : 'Unknown',
+                    'current_coordinates' => ['x' => $wheelchair->x_coordinate, 'y' => $wheelchair->y_coordinate],
+                ];
+            }
+            $vitalState = $wheelchair->aiRecommendations()->latest()->first();
+
+            // Get latest alert for EACH type
+            $alertTypes = ['heart', 'temperature', 'mpu_monitoring', 'obstacle', 'sos', 'battery'];
+            $latestAlerts = [];
+            foreach ($alertTypes as $type) {
+                $event = $wheelchair->events()->where('type', $type)->latest()->first();
+                $latestAlerts[$type] = $event ? [
+                    'message' => $event->message,
+                    'severity' => $event->severity,
+                    'timestamp' => $event->created_at->toIso8601String(),
+                ] : null;
+            }
+        }
+
+        $contextPayload = [
+            'user_profile' => [
+                'name' => $user->name,
+                'medical_condition' => $medicalConditions ?: 'Unknown',
+                'age' => $user->age,
+                'weight' => $user->weight,
+                'gender' => $user->gender,
+            ],
+            'relations' => [
+                'doctor' => $doctor ? ['name' => $doctor->name, 'phone' => $doctor->phone] : null,
+                'companions' => $companions,
+            ],
+            'wheelchair_status' => $wheelchair ? [
+                'serial_number' => $wheelchair->serial_number,
+                'battery' => $wheelchair->battery,
+                'connection' => $wheelchair->connection_state,
+            ] : null,
+            'current_health_state' => $vitalState ? [
+                'heart_rate' => $vitalState->heart_rate,
+                'temperature' => $vitalState->temperature,
+                'mpu_monitoring' => [
+                    'angle' => $vitalState->mpu_angle,
+                    'fall_detected' => $vitalState->fall_status === 'critical',
+                    "fainting_risk" => $vitalState->fall_status,
+                ]
+            ] : null,
+            'current_trip' => $currentTrip,
+            'latest_alerts' => $latestAlerts,
+        ];
+
+        // 3. Call the HF space bot API
         $textToSend = $content ?? 'User sent attachment(s).';
-        $systemMessage = $request->input('system_message', "You are a friendly Chatbot.");
+
+        // Append context as a hidden JSON string for the AI
+        $systemMessage = $request->input('system_message', "You are a friendly Chatbot. Context data: ") . json_encode($contextPayload);
+
         $maxTokens = $request->input('max_tokens', 512);
         $temperature = $request->input('temperature', 0.7);
         $topP = $request->input('top_p', 0.95);
@@ -182,7 +254,6 @@ class MessageController extends ApiController
                 'user_message' => $userMessage,
                 'bot_message' => $botMessage
             ]);
-
         } catch (\Exception $e) {
             throw new \Exception(__('messages.bot_service_unavailable') . " " . $e->getMessage(), 500);
         }

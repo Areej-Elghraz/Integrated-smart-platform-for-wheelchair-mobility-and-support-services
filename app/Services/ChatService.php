@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
+use App\Events\MessageSentNotification;
+use App\Notifications\DatabaseNotification\MessageSentDbNotification;
 use Illuminate\Support\Facades\Cache;
 
 class ChatService
@@ -170,9 +172,17 @@ class ChatService
             'updated_at'          => now(),
         ]);
 
+        // Broadcast Event
+        broadcast(new MessageSentNotification($message, $partnerId));
+
+        // DB Notification
+        $receiver = User::find($partnerId);
+        if ($receiver) {
+            $receiver->notify(new MessageSentDbNotification($message));
+        }
+
         $this->clearCache($userId, $partnerId);
         return $message;
-        // ->load(['sender:id,name,image']);
     }
 
     public function deleteConversation(User $user, int $partnerId, string $type = 'for_me'): void

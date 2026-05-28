@@ -34,7 +34,6 @@ return new class extends Migration
 
             // user -> data
             $table->string('phone')->unique()->nullable();
-            $table->tinyInteger('age')->nullable();
             $table->boolean('follow_doctor')->nullable();
 
             // organization -> data

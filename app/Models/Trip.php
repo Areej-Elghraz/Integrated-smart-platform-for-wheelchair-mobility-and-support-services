@@ -5,48 +5,42 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Trip extends Model
 {
     protected $fillable = [
-        'user_id',
-        'e_chair_id',
-        'start_location',
-        'end_location',
+        'wheelchair_id',
+        'place_id',
+        'mode',
         'status',
-        'navigation_mode',
-        'start_time',
-        'end_time',
-        'total_distance',
-        'total_time',
-        'metadata',
+        'started_at',
+        'ended_at',
     ];
 
     protected $casts = [
-        'start_location' => 'array',
-        'end_location' => 'array',
-        'metadata' => 'array',
-        'start_time' => 'datetime',
-        'end_time' => 'datetime',
+        'started_at' => 'datetime',
+        'ended_at' => 'datetime',
     ];
 
-    public function user(): BelongsTo
+    public function wheelchair(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Wheelchair::class);
     }
 
-    public function eChair(): BelongsTo
+    public function place(): BelongsTo
     {
-        return $this->belongsTo(EChair::class, 'e_chair_id');
+        return $this->belongsTo(Place::class);
     }
 
-    public function updates(): HasMany
+    public function movementState(): HasOne
     {
-        return $this->hasMany(TripUpdate::class);
+        return $this->hasOne(TripMovementState::class);
     }
 
-    public function emergencyEvents(): HasMany
+    public function events(): HasMany
     {
-        return $this->hasMany(EmergencyEvent::class);
+        return $this->hasMany(Event::class);
     }
+
 }

@@ -38,9 +38,11 @@ class FavoritesTest extends TestCase
             'organization_id' => $organization->id,
             'owner_id' => $user->id,
             'description' => 'A nice place',
-            'latitude' => 10.0,
-            'longitude' => 20.0,
+            'x' => 10.0,
+            'y' => 20.0,
         ]);
+
+        $user->favorites()->attach($place->id);
 
         $response = $this->getJson('/api/profile/favorites');
 
@@ -69,8 +71,8 @@ class FavoritesTest extends TestCase
                 'category_id' => $category->id,
                 'organization_id' => $organization->id,
                 'owner_id' => $user->id,
-                'latitude' => 0, 
-                'longitude' => 0
+                'x' => 0, 
+                'y' => 0
             ]);
             $user->favorites()->attach($place->id);
             $places[] = $place;

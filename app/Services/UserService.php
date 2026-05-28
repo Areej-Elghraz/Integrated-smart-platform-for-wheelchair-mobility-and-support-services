@@ -22,26 +22,28 @@ class UserService
      */
     public function createUser(array $data, ?string $imagePath): User
     {
-        $role = !isset($data['role']) && isset($data['latitude'])
-            ?UserRoleEnum::ORGANIZATION->value
-            : UserRoleEnum::USER->value;
+        $role = $data['role'] ?? UserRoleEnum::USER->value;
 
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'role' => $data['role'] ?? $role,
+            'role' => $role,
             'password' => Hash::make($data['password']),
             'language' => $data['language'] ?? LanguagePreferenceEnum::EN->value,
             // user
             'phone' => $data['phone'] ?? null,
-            'age' => $data['age'] ?? null,
             'follow_doctor' => $data['follow_doctor'] ?? null,
+            'username' => $data['username'] ?? null,
+            'gender' => $data['gender'] ?? null,
+            'birth_date' => $data['birth_date'] ?? null,
+            'blood_type' => $data['blood_type'] ?? null,
+            'weight' => $data['weight'] ?? null,
+            'height' => $data['height'] ?? null,
             // organization
-            // 'location'      => $data['location'] ?? null,
             'image' => $imagePath ?? null,
         ]);
 
-        if ($user->role === UserRoleEnum::ORGANIZATION->value) {
+        if ($role === UserRoleEnum::ORGANIZATION->value) {
             $this->organizationService->createOrganization($user, [
                 'name' => $data['name'],
                 'latitude' => $data['latitude'] ?? null,

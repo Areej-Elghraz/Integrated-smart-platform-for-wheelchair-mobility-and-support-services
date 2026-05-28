@@ -23,6 +23,16 @@ class LikeController extends ApiController
             );
         } else {
             $post->likes()->create(['user_id' => $user->id]);
+
+            if ($user->id !== $post->user_id) {
+                broadcast(new \App\Events\PostLiked($post, $user));
+                
+                $postOwner = \App\Models\User::find($post->user_id);
+                if ($postOwner) {
+                    $postOwner->notify(new \App\Notifications\DatabaseNotification\PostInteractionNotification($user, 'liked', $post->id));
+                }
+            }
+
             return $this->successResponse(
                 message: __('messages.actions.created_success', ['resource' => __('messages.resources.like.singular') ?? 'Like']),
                 status: 201

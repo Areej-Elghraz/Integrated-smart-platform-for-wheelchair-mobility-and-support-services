@@ -20,8 +20,6 @@ return new class extends Migration
             $table->foreignId('parent_place_id')->nullable()->constrained('places')->cascadeOnDelete();
             $table->foreignId('country_id')->nullable()->constrained('countries')->nullOnDelete();
             $table->foreignId('city_id')->nullable()->constrained('cities')->nullOnDelete();
-            $table->decimal('latitude', 10, 8)->nullable();
-            $table->decimal('longitude', 11, 8)->nullable();
             $table->string('image')->nullable();
             $table->json('accessibility_data')->nullable(); // For wheelchair navigation & AI routing
             $table->timestamps();

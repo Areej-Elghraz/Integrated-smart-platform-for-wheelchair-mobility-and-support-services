@@ -9,12 +9,22 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Filament\Panel;
+use Filament\Models\Contracts\FilamentUser;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens;
 
+    protected static function booted()
+    {
+        static::deleting(function ($user) {
+            if ($user->getRawOriginal('image') && \Illuminate\Support\Facades\Storage::disk('public')->exists($user->getRawOriginal('image'))) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->getRawOriginal('image'));
+            }
+        });
+    }
     /**
      * The attributes that are mass assignable.
      *
@@ -26,17 +36,21 @@ class User extends Authenticatable
         'email_verified_at',
         'password',
         'password_set',
-        // 'provider_id',
-        // 'provider_name',
         'language',
         'role',
         // user
         'phone',
-        'age',
-        'follow_doctor',
+        'username',
+        'gender',
+        'birth_date',
+        'weight',
+        'height',
         // organization
         'location',
         'image',
+        // otp
+        'otp',
+        'otp_expires_at',
     ];
 
     /**
@@ -52,6 +66,17 @@ class User extends Authenticatable
         'remember_token',
         'provider_token',
         'provider_refresh_token',
+        'otp',
+        'otp_expires_at',
+    ];
+
+    /**
+     * The attributes that should be appended to the model's array form.
+     *
+     * @var array
+     */
+    protected $appends = [
+        'age',
     ];
 
     /**
@@ -102,14 +127,34 @@ class User extends Authenticatable
         return $this->role === \App\Enums\UserRoleEnum::USER->value;
     }
 
+    public function isCompanion(): bool
+    {
+        return $this->role === \App\Enums\UserRoleEnum::COMPANION->value;
+    }
+
+    public function isDoctor(): bool
+    {
+        return $this->role === \App\Enums\UserRoleEnum::DOCTOR->value;
+    }
+
     public function isOrganization(): bool
     {
         return $this->role === \App\Enums\UserRoleEnum::ORGANIZATION->value;
     }
 
+    public function isOrganizationAdmin(): bool
+    {
+        return $this->role === \App\Enums\UserRoleEnum::ORGANIZATION_ADMIN->value;
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === \App\Enums\UserRoleEnum::ADMIN->value;
+    }
+
+    public function getAgeAttribute(): ?int
+    {
+        return $this->birth_date ? \Carbon\Carbon::parse($this->birth_date)->age : null;
     }
 
     public function getImageAttribute($value)
@@ -124,6 +169,11 @@ class User extends Authenticatable
     public function favoritePlaces()
     {
         return $this->morphedByMany(Place::class, 'favoritable', 'favorites')->withTimestamps();
+    }
+
+    public function favorites()
+    {
+        return $this->favoritePlaces();
     }
 
     public function favoriteOrganizations()
@@ -169,5 +219,71 @@ class User extends Authenticatable
     public function emergencyContacts(): HasMany
     {
         return $this->hasMany(EmergencyContact::class);
+    }
+
+    // disability relations removed in Phase 3
+
+    public function medicalConditions()
+    {
+        return $this->belongsToMany(MedicalCondition::class, 'user_medical_conditions');
+    }
+
+    public function wheelchairs(): HasMany
+    {
+        return $this->hasMany(Wheelchair::class);
+    }
+
+    /**
+     * Users this user has added as friends.
+     */
+    public function friendsOfMine()
+    {
+        return $this->belongsToMany(User::class, 'user_friends', 'user_id', 'friend_id')
+            ->using(Friendship::class)
+            ->withPivot(['status', 'accepted_at'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Users who added this user as a friend.
+     */
+    public function friendOf()
+    {
+        return $this->belongsToMany(User::class, 'user_friends', 'friend_id', 'user_id')
+            ->using(Friendship::class)
+            ->withPivot(['status', 'accepted_at'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Merged accepted friends
+     */
+    public function getFriendsAttribute()
+    {
+        $friendsOfMine = $this->friendsOfMine()->wherePivot('status', 'accepted')->get();
+        $friendOf = $this->friendOf()->wherePivot('status', 'accepted')->get();
+
+        return $friendsOfMine->merge($friendOf);
+    }
+
+    /**
+     * Query scope for accepted friends (useful for eager loading)
+     */
+    public function friends()
+    {
+        return $this->friendsOfMine()->wherePivot('status', 'accepted');
+    }
+
+    /**
+     * 3. دالة الصلاحية الخاصة بـ Filament (أضفناها هنا في النهاية)
+     * لتسمح للمسؤولين فقط بدخول لوحة الإدارة
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        // هنخليها ترجع true عشان تقدري تدخلي بالأكونت اللي عملتيه حالا وتجربي براحتك
+        return true;
+
+        // وقت المناقشة لو عايزة تحبكيها أوي خليها كدا:
+        // return $this->isAdmin();
     }
 }

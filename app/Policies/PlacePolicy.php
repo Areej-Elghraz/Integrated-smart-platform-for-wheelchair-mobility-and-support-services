@@ -29,9 +29,15 @@ class PlacePolicy
                 && $place->organization_id == $org->id;
         }
 
-        return is_null($place->owner_id)
-            || optional($place->owner)->isOrganization()
-            || $place->owner_id == $user->id;
+        if (is_null($place->owner_id) || optional($place->owner)->isOrganization() || $place->owner_id == $user->id) {
+            return true;
+        }
+
+        if ($user->role === 'companion') {
+            return $user->friends()->wherePivot('status', 'accepted')->where('users.id', $place->owner_id)->exists();
+        }
+
+        return false;
         // || ($place->owner && $place->owner->role == UserRoleEnum::ORGANIZATION->value);
     }
 
@@ -40,6 +46,10 @@ class PlacePolicy
      */
     public function create(User $user, array $data): bool
     {
+        if ($user->isDoctor()) {
+            return false;
+        }
+
         if ($user->isOrganization()) {
             $org = $user->organizationRoleOrganization();
             return $org
@@ -53,6 +63,10 @@ class PlacePolicy
      */
     public function update(User $user, Place $place): bool
     {
+        if ($user->isDoctor()) {
+            return false;
+        }
+
         if ($user->isOrganization()) {
             $org = $user->organizationRoleOrganization();
             return $org

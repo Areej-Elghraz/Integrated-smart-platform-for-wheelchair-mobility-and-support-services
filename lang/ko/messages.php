@@ -25,6 +25,8 @@ return [
     'comment'      => ['singular' => '댓글', 'plural'  => '댓글'],
     'language'     => ['singular' => '언어', 'plural'  => '언어'],
     'visitor'      => ['singular' => '방문',          'plural' => '방문',],
+    'floor'        => ['singular' => '층',            'plural' => '층',],
+    'map'          => ['singular' => '지도',          'plural' => '지도',],
   ],
 
   'actions' => [

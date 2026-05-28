@@ -7,6 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class Message extends Model
 {
+    protected static function booted()
+    {
+        static::deleting(function ($message) {
+            if ($message->getRawOriginal('attachment') && \Illuminate\Support\Facades\Storage::disk('public')->exists($message->getRawOriginal('attachment'))) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($message->getRawOriginal('attachment'));
+            }
+        });
+    }
+
     protected $fillable = [
         'conversation_id',
         'sender_id',

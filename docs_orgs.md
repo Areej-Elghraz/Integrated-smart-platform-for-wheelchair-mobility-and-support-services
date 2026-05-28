@@ -55,6 +55,8 @@
   "category_name": "Healthcare",
   "country_name": "USA",
   "city_name": "New York",
+  "country_id": 1,
+  "city_id": 1,
   "description": "Accessible Healthcare Organization",
   "image": "(file)"
 }
@@ -63,15 +65,19 @@
 - `name` (string, required): Org name.
 - `category_id` (integer, optional): Existing category.
 - `category_name` (string, required_without:category_id): Dynamic category creation.
-- `country_name` (string, required): Registers or finds geo entry.
-- `city_name` (string, required)
+- `country_name` (string, required_without:country_id): Registers or finds geo entry.
+- `city_name` (string, required_without:city_id)
+- `country_id` (integer, required_without:country_name)
+- `city_id` (integer, required_without:city_name)
 
 #### Validation Rules
 - `name`: `required|string|max:255`
 - `category_id`: `nullable|exists:categories,id`
 - `category_name`: `required_without:category_id|string|max:255`
-- `country_name`: `required|string|max:255`
-- `city_name`: `required|string|max:255`
+- `country_name`: `required_without:country_id|string|max:255`
+- `city_name`: `required_without:city_id|string|max:255`
+- `country_id`: `required_without:country_name|exists:countries,id`
+- `city_id`: `required_without:city_name|exists:cities,id`
 
 #### Business Logic Notes
 - Resolves mapping `city_name` and `country_name` automatically into IDs using `GeoService`.

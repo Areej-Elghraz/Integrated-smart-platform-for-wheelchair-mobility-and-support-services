@@ -17,6 +17,15 @@ class Organization extends Model
 {
     use HasFactory, HasOptionalRelations, HasInteractions;
 
+    protected static function booted()
+    {
+        static::deleting(function ($organization) {
+            if ($organization->getRawOriginal('image') && \Illuminate\Support\Facades\Storage::disk('public')->exists($organization->getRawOriginal('image'))) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($organization->getRawOriginal('image'));
+            }
+        });
+    }
+
     protected $fillable = [
         'name',
         'owner_id',
@@ -63,6 +72,8 @@ class Organization extends Model
         'favoritedBy',
         'visitors',
         'comments',
+        'floors',
+        'floors.map',
     ];
 
     protected $appends = ['rating_distribution', 'top_reviews', 'is_favorite', 'top_visitors', 'visitorsCount', 'average_rating'];
@@ -219,5 +230,11 @@ class Organization extends Model
             ->makeHidden('pivot');
     }
 
-    // Protected by HasInteractions trait
+    /**
+     * Get the floors belonging to this organization.
+     */
+    public function floors(): HasMany
+    {
+        return $this->hasMany(Floor::class);
+    }
 }

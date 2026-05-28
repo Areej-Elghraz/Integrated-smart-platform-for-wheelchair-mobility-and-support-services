@@ -25,6 +25,8 @@ return [
     'comment'      => ['singular' => 'Commentaire', 'plural'  => 'Commentaires'],
     'language'     => ['singular' => 'Langue', 'plural'  => 'Langues'],
     'visitor'      => ['singular' => 'Visite',        'plural' => 'Visites',],
+    'floor'        => ['singular' => 'Étage',         'plural' => 'Étages',],
+    'map'          => ['singular' => 'Carte',         'plural' => 'Cartes',],
   ],
 
   'actions' => [
@@ -82,7 +84,7 @@ return [
   'unauthorized' => 'Non autorisé',
   'chat_session_deleted' => 'Session de discussion supprimée avec succès',
   'message_media_required' => 'Un message ou un média est requis',
-  'user_message_saved_bot_failed' => 'Message utilisateur enregistré, mais le bot n'a pas pu répondre.',
+  'user_message_saved_bot_failed' => "Message utilisateur enregistré, mais le bot n'a pas pu répondre.",
   'bot_service_unavailable' => 'Service bot indisponible: ',
   'reaction_updated' => 'Réaction mise à jour',
 ];

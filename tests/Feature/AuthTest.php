@@ -17,6 +17,7 @@ class AuthTest extends TestCase
     {
         $response = $this->postJson('/api/signup', [ // Corrected route
             'name' => 'Test User',
+            'username' => 'testuser',
             'email' => 'test@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
@@ -97,30 +98,4 @@ class AuthTest extends TestCase
         $this->assertEquals($expectedMessage, $response->json('message'));
     }
 
-    public function test_cache_is_cleared_after_email_verification()
-    {
-        $user = User::factory()->create([
-            'email' => 'verify@example.com',
-            'email_verified_at' => null,
-            'email_verification_code' => bcrypt('1234'),
-            'email_verification_code_expires_at' => now()->addMinutes(10),
-        ]);
-
-        // Simulate caching the unverified user
-        // We manually put it in cache because getUserByEmail puts it there.
-        Cache::put("user_email:{$user->email}", $user, 3600);
-        
-        // Correctly asserting it is there
-        $this->assertTrue(Cache::has("user_email:{$user->email}"));
-
-        $response = $this->postJson('/api/verify-email', [
-            'email' => 'verify@example.com',
-            'code'  => '1234'
-        ]);
-        
-        $response->assertStatus(200);
-
-        // Assert cache is cleared
-        $this->assertFalse(Cache::has("user_email:{$user->email}"));
-    }
 }

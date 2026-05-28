@@ -18,7 +18,6 @@ class City extends Model
     ];
 
     protected $hidden = [
-        'country_id',
     ];
 
     protected $casts = ['country_id' => 'integer'];

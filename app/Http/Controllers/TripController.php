@@ -3,104 +3,108 @@
 namespace App\Http\Controllers;
 
 use App\Models\Trip;
-use App\Models\TripUpdate;
-use App\Engines\TripStateMachine;
+use App\Models\Wheelchair;
+use App\Events\TripUpdated;
+use App\Events\TripMovementStatusUpdated;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class TripController extends ApiController
 {
-    public function index(Request $request)
+    /**
+     * Start a new trip.
+     */
+    public function startTrip(Request $request, $wheelchairId): JsonResponse
     {
-        $trips = Trip::where('user_id', Auth::id())
-            ->with(['eChair'])
-            ->latest()
-            ->paginate(15);
+        $wheelchair = Wheelchair::findOrFail($wheelchairId);
+        $this->authorize('update', $wheelchair);
 
-        return $this->successResponse(
-            message: 'Trips retrieved successfully',
-            parameters: ['trips' => $trips]
-        );
-    }
-
-    public function store(Request $request)
-    {
         $validated = $request->validate([
-            'e_chair_id' => 'required|exists:e_chairs,id',
-            'start_location' => 'required|array',
-            'end_location' => 'required|array',
-            'navigation_mode' => 'nullable|string|in:autonomous,manual,assisted',
-            'metadata' => 'nullable|array',
+            'mode' => 'required|string|in:autonomous,manual',
+            'place_id' => 'nullable|exists:places,id',
         ]);
+
+        // End any currently active trips for this wheelchair
+        Trip::where('wheelchair_id', $wheelchair->id)
+            ->where('status', 'started')
+            ->update([
+                'status' => 'completed',
+                'ended_at' => now(),
+            ]);
 
         $trip = Trip::create([
-            'user_id' => Auth::id(),
-            'e_chair_id' => $validated['e_chair_id'],
-            'start_location' => $validated['start_location'],
-            'end_location' => $validated['end_location'],
-            'navigation_mode' => $validated['navigation_mode'] ?? 'manual',
-            'status' => 'pending',
-            'start_time' => now(),
-            'metadata' => $validated['metadata'] ?? [],
+            'wheelchair_id' => $wheelchair->id,
+            'place_id' => $validated['place_id'] ?? null,
+            'mode' => $validated['mode'],
+            'status' => 'started',
+            'started_at' => now(),
         ]);
 
-        return $this->successResponse(
-            message: 'Trip initiated successfully',
-            status: 201,
-            parameters: ['trip' => $trip]
-        );
+        $trip->load(['place', 'wheelchair']);
+
+        broadcast(new TripUpdated($trip));
+
+        return $this->successResponse('Trip started successfully.', parameters: ['data' => $trip]);
     }
 
-    public function update(Request $request, Trip $trip)
+    /**
+     * End a trip.
+     */
+    public function endTrip($tripId): JsonResponse
     {
-        $this->authorize('update', $trip);
+        $trip = Trip::with('wheelchair')->findOrFail($tripId);
+        $this->authorize('update', $trip->wheelchair);
 
-        $validated = $request->validate([
-            'status' => 'required|string|in:active,paused,emergency_paused,locally_stopped,completed,cancelled',
-            'end_time' => 'nullable|date',
-            'total_distance' => 'nullable|numeric',
-            'total_time' => 'nullable|integer',
+        $trip->update([
+            'status' => 'completed',
+            'ended_at' => now(),
         ]);
 
-        // State Machine & Guards Validation
-        $validation = TripStateMachine::validate($trip, $validated['status']);
-        
-        if (!$validation['allowed']) {
-            return $this->errorResponse(
-                message: $validation['reason'],
-                code: 400
-            );
-        }
+        broadcast(new TripUpdated($trip));
 
-        $trip->update($validated);
-
-        if ($validated['status'] === 'completed' || $validated['status'] === 'cancelled') {
-            $trip->update(['end_time' => $validated['end_time'] ?? now()]);
-        }
-
-        return $this->successResponse(
-            message: 'Trip status updated successfully',
-            parameters: ['trip' => $trip]
-        );
+        return $this->successResponse('Trip ended successfully.', parameters: ['data' => $trip]);
     }
 
-    public function addUpdate(Request $request, Trip $trip)
+    /**
+     * Get movement states of a trip.
+     */
+    public function movementStates($tripId): JsonResponse
     {
-        $this->authorize('update', $trip);
+        $trip = Trip::with(['wheelchair', 'movementState'])->findOrFail($tripId);
+        $this->authorize('view', $trip->wheelchair);
+
+        return $this->successResponse('Movement state retrieved.', parameters: ['data' => $trip->movementState]);
+    }
+
+    /**
+     * Update movement status of a trip.
+     */
+    public function updateMovementStatus(Request $request, $tripId): JsonResponse
+    {
+        $trip = Trip::with('wheelchair')->findOrFail($tripId);
+        $this->authorize('update', $trip->wheelchair);
 
         $validated = $request->validate([
-            'update_type' => 'required|string',
-            'source' => 'required|string|in:user,ai,assistant,system',
-            'update_data' => 'nullable|array',
-            'timestamp_ms' => 'required|numeric',
+            'movement_status' => 'required|string|in:moving,idle',
+            'speed' => 'required|numeric',
+            'position' => 'required|array',
+            'theta' => 'required|numeric',
+            'mode' => 'required|string|in:autonomous,manual',
+            'risk_level' => 'required|string|in:low,medium,high',
+            'obstacle_detected' => 'required|boolean',
+            'obstacle_distance' => 'required|numeric',
         ]);
 
-        $update = $trip->updates()->create($validated);
-
-        return $this->successResponse(
-            message: 'Trip update ingested',
-            status: 202,
-            parameters: ['update' => $update]
+        $movementState = $trip->movementState()->updateOrCreate(
+            ['trip_id' => $trip->id],
+            $validated
         );
+
+        $movementState->load('trip.wheelchair');
+
+        broadcast(new TripMovementStatusUpdated($movementState));
+
+        return $this->successResponse('Trip movement state updated successfully.', parameters: ['data' => $movementState]);
     }
 }

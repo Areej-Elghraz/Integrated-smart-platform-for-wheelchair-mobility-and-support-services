@@ -25,6 +25,8 @@ return [
     'comment'      => ['singular' => 'Kommentar', 'plural'  => 'Kommentare'],
     'language'     => ['singular' => 'Sprache', 'plural'  => 'Sprachen'],
     'visitor'      => ['singular' => 'Besuch',        'plural' => 'Besuche',],
+    'floor'        => ['singular' => 'Etage',         'plural' => 'Etagen',],
+    'map'          => ['singular' => 'Karte',         'plural' => 'Karten',],
   ],
 
   'actions' => [

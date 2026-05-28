@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->call([
+            MedicalConditionSeeder::class,
             DummyDataSeeder::class,
         ]);
     }

@@ -11,6 +11,23 @@ class ChatMessage extends Model
 {
     use HasFactory;
 
+    protected static function booted()
+    {
+        static::deleting(function ($message) {
+            $attachments = $message->getRawOriginal('attachments');
+            if ($attachments) {
+                $files = json_decode($attachments, true);
+                if (is_array($files)) {
+                    foreach ($files as $file) {
+                        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($file)) {
+                            \Illuminate\Support\Facades\Storage::disk('public')->delete($file);
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     protected $fillable = [
         'chat_session_id',
         'sender_type',

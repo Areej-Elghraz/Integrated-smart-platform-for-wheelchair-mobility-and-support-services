@@ -26,8 +26,12 @@ abstract class ApiController extends Controller
     {
         $response = [
             'message' => $message,
-            'data' => $parameters
+            'data' => isset($parameters['data']) || (isset($parameters['data']) && isset($parameters['total'])) ? $parameters['data'] : $parameters
         ];
+
+        if (isset($parameters['data']) && isset($parameters['total'])) {
+            $response['total'] = $parameters['total'];
+        }
 
         return response()->json($response, $status);
     }

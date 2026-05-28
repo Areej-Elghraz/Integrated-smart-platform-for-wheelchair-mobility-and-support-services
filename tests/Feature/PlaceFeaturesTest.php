@@ -37,8 +37,8 @@ class PlaceFeaturesTest extends TestCase
 
         $place = Place::create([
             'name' => 'Test Place',
-            'latitude' => 10,
-            'longitude' => 10,
+            'x' => 10,
+            'y' => 10,
             'category_id' => $category->id,
             'organization_id' => $organization->id,
         ]);
@@ -49,11 +49,12 @@ class PlaceFeaturesTest extends TestCase
         ], $headers);
 
         $response->assertStatus(201)
-                 ->assertJsonPath('data.review.rating', 5)
-                 ->assertJsonPath('data.review.comment', 'Great place!');
+                 ->assertJsonPath('data.rating', 5)
+                 ->assertJsonPath('data.comment', 'Great place!');
 
         $this->assertDatabaseHas('reviews', [
-            'place_id' => $place->id,
+            'reviewable_id' => $place->id,
+            'reviewable_type' => Place::class,
             'user_id' => $user->id,
             'rating' => 5,
         ]);
@@ -81,8 +82,8 @@ class PlaceFeaturesTest extends TestCase
 
         $response->assertStatus(200)
                  ->assertJsonPath('data.rating', 4) // (5+3)/2 = 4
-                 ->assertJsonPath('data.rating_distribution.4', '50%')
-                 ->assertJsonPath('data.rating_distribution.2', '50%');
+                 ->assertJsonPath('data.rating_distribution.5', '50%')
+                 ->assertJsonPath('data.rating_distribution.3', '50%');
     }
 
     public function test_can_favorite_place()
@@ -101,14 +102,22 @@ class PlaceFeaturesTest extends TestCase
         $response->assertStatus(200)
                  ->assertJsonPath('data.is_favorited', true);
         
-        $this->assertDatabaseHas('favorites', ['user_id' => $user->id, 'place_id' => $place->id]);
+        $this->assertDatabaseHas('favorites', [
+            'user_id' => $user->id,
+            'favoritable_id' => $place->id,
+            'favoritable_type' => Place::class,
+        ]);
 
         // Toggle Off
         $response = $this->postJson("/api/places/{$place->id}/favorite", [], $headers);
         $response->assertStatus(200)
                  ->assertJsonPath('data.is_favorited', false);
         
-        $this->assertDatabaseMissing('favorites', ['user_id' => $user->id, 'place_id' => $place->id]);
+        $this->assertDatabaseMissing('favorites', [
+            'user_id' => $user->id,
+            'favoritable_id' => $place->id,
+            'favoritable_type' => Place::class,
+        ]);
     }
 
     public function test_can_delete_review()

@@ -20,14 +20,43 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\SupportMessage;
 use App\Models\Device;
+use App\Models\MedicalCondition;
+use App\Models\Wheelchair;
+
 use Illuminate\Support\Str;
 
 class DummyDataSeeder extends Seeder
 {
     public function run(): void
     {
+        $medicalConds = \App\Models\MedicalCondition::all();
+
         // 1. Users
         $users = User::factory(10)->create();
+        foreach ($users as $user) {
+            if ($user->role === 'user') {
+                // Attach 1-2 random medical conditions
+                if ($medicalConds->count() > 0) {
+                    $mcToAttach = $medicalConds->random(rand(1, 2))->pluck('id')->toArray();
+                    $user->medicalConditions()->sync($mcToAttach);
+                }
+            }
+        }
+
+        // Seed some wheelchairs
+        $wheelchairUsers = $users->where('role', 'user')->take(5)->values();
+        foreach (range(0, 4) as $idx) {
+            if (!isset($wheelchairUsers[$idx])) continue;
+            $wheelchair = Wheelchair::create([
+                'serial_number' => 'WC-' . Str::upper(Str::random(8)),
+                'battery' => rand(10, 100),
+                'voltage' => 24.5,
+                'current' => 2.1,
+                'temperature' => 35.5,
+                'connection_state' => collect(['online', 'offline'])->random(),
+                'user_id' => $wheelchairUsers[$idx]->id,
+            ]);
+        }
 
         // 2. Countries and Cities
         $countries = Country::factory(3)->create();

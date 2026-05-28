@@ -24,8 +24,12 @@ class UpdateDataRequest extends FormRequest
             'logout_other_devices' => 'sometimes|required|boolean',
             // user
             'phone'                => 'sometimes|required|phone:AUTO,MOBILE|unique:users,phone,' . auth('sanctum')->id(), /// phone validation
-            'age'                  => 'sometimes|required|integer',
-            'follow_doctor'        => 'sometimes|required|boolean',
+            'gender'               => 'sometimes|required|string|in:male,female',
+            'birth_date'           => 'sometimes|required|date|before:today',
+            'weight'               => 'sometimes|required|numeric|min:1',
+            'height'               => 'sometimes|required|numeric|min:1',
+            'medical_condition_ids'=> 'sometimes|array',
+            'medical_condition_ids.*'=> 'exists:medical_conditions,id',
             // organization
             'location'             => 'sometimes|required|string',
             'image'                => 'sometimes|required|image|mimes:png,jpg,jpeg,gif|max:2048',

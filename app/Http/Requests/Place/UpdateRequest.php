@@ -21,10 +21,15 @@ class UpdateRequest extends FormRequest
             'category_name'      => 'sometimes|required_without:category_id|string|max:255',
             'country_name'       => 'sometimes|required_without:country_id|string|max:255',
             'city_name'          => 'sometimes|required_without:city_id|string|max:255',
-            'latitude'           => 'sometimes|numeric|between:-90,90',
-            'longitude'          => 'sometimes|numeric|between:-180,180',
+            'country_id'         => 'sometimes|required_without:country_name|exists:countries,id',
+            'city_id'            => 'sometimes|required_without:city_name|exists:cities,id',
             'image'              => 'sometimes|image|mimes:png,jpg,jpeg,gif|max:2048',
             'accessibility_data' => 'nullable|array',
+            'floor_id'           => 'nullable|exists:floors,id',
+            'x'                  => 'sometimes|required|numeric',
+            'y'                  => 'sometimes|required|numeric',
+            'z'                  => 'nullable|numeric',
+            'rotation'           => 'nullable|numeric',
         ];
     }
 }

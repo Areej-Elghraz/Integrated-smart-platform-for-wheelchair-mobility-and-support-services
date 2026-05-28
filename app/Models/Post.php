@@ -7,6 +7,35 @@ use Illuminate\Database\Eloquent\Model;
 
 class Post extends Model
 {
+    protected static function booted()
+    {
+        static::deleting(function ($post) {
+            $images = $post->getRawOriginal('images');
+            if ($images) {
+                $filesArray = json_decode($images, true);
+                if (is_array($filesArray)) {
+                    foreach ($filesArray as $file) {
+                        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($file)) {
+                            \Illuminate\Support\Facades\Storage::disk('public')->delete($file);
+                        }
+                    }
+                }
+            }
+
+            $files = $post->getRawOriginal('files');
+            if ($files) {
+                $filesArray = json_decode($files, true);
+                if (is_array($filesArray)) {
+                    foreach ($filesArray as $file) {
+                        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($file)) {
+                            \Illuminate\Support\Facades\Storage::disk('public')->delete($file);
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     protected $fillable = [
         'user_id',
         'content',

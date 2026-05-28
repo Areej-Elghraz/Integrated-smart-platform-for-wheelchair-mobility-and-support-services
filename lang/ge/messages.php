@@ -25,6 +25,8 @@ return [
     'comment'      => ['singular' => 'Comment', 'plural'  => 'Comments'],
     'language'     => ['singular' => 'Language', 'plural'  => 'Languages'],
     'visitor'      => ['singular' => 'Besuch',        'plural' => 'Besuche',],
+    'floor'        => ['singular' => 'სართული',        'plural' => 'სართულები',],
+    'map'          => ['singular' => 'რუკა',           'plural' => 'რუკები',],
   ],
 
   'actions' => [

@@ -79,6 +79,8 @@ class PostController extends ApiController
             $files
         );
 
+        broadcast(new \App\Events\PostCreated($post));
+
         return $this->successResponse(
             message: __('messages.actions.created_success', ['resource' => 'Post']),
             status: 201,

@@ -14,6 +14,15 @@ class Place extends Model
 {
     use HasFactory, HasInteractions;
 
+    protected static function booted()
+    {
+        static::deleting(function ($place) {
+            if ($place->getRawOriginal('image') && \Illuminate\Support\Facades\Storage::disk('public')->exists($place->getRawOriginal('image'))) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($place->getRawOriginal('image'));
+            }
+        });
+    }
+
     protected $fillable = [
         'name',
         'description',
@@ -22,10 +31,15 @@ class Place extends Model
         'country_id',
         'city_id',
         'owner_id',
-        'latitude',
-        'longitude',
         'image',
         'accessibility_data',
+        'floor_id',
+        'map_id',
+        'points',
+        'x',
+        'y',
+        'z',
+        'rotation',
     ];
 
     protected $hidden = [
@@ -39,11 +53,18 @@ class Place extends Model
 
     protected $casts = [
         'accessibility_data' => 'array',
+        'points'             => 'array',
         'owner_id'           => 'integer',
         'parent_place_id'    => 'integer',
         'organization_id'    => 'integer',
         'country_id'         => 'integer',
         'city_id'            => 'integer',
+        'floor_id'           => 'integer',
+        'map_id'             => 'integer',
+        'x'                  => 'double',
+        'y'                  => 'double',
+        'z'                  => 'double',
+        'rotation'           => 'double',
     ];
 
     protected $appends = ['rating', 'rating_distribution', 'top_reviews', 'is_favorite', 'top_visitors', 'visitorsCount', 'average_rating'];
@@ -69,6 +90,10 @@ class Place extends Model
         'comments',
         'parent',
         'children',
+        'floor',
+        'floor.map',
+        'floors',
+        'floors.map',
     ];
 
     public function scopeSearch($query, ?string $term)
@@ -205,5 +230,21 @@ class Place extends Model
             ->limit(3)
             ->get()
             ->makeHidden('pivot');
+    }
+
+    /**
+     * Get the floor that this place is located on.
+     */
+    public function floor(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Floor::class, 'floor_id');
+    }
+
+    /**
+     * Get the sub-floors inside this place.
+     */
+    public function floors(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Floor::class, 'place_id');
     }
 }

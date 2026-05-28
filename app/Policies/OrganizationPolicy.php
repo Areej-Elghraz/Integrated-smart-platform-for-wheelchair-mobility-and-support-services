@@ -21,6 +21,10 @@ class OrganizationPolicy
      */
     public function view(User $user, Organization $organization): bool
     {
+        if ($user->isDoctor()) {
+            return false;
+        }
+
         // organization role user
         if ($user->isOrganization()) {
             $org = $user->organizationRoleOrganization();
@@ -43,6 +47,10 @@ class OrganizationPolicy
      */
     public function create(User $user): bool
     {
+        if ($user->isDoctor()) {
+            return false;
+        }
+
         if ($user->isOrganization()) {
             return !($user->organizations()->count() >= 1);
         }
@@ -54,6 +62,10 @@ class OrganizationPolicy
      */
     public function update(User $user, Organization $organization): bool
     {
+        if ($user->isDoctor()) {
+            return false;
+        }
+
         // organization role user
         if ($user->isOrganization()) {
             $org = $user->organizationRoleOrganization();

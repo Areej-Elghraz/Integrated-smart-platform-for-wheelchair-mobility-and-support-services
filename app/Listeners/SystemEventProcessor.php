@@ -76,7 +76,7 @@ class SystemEventProcessor
             'e_chair_id' => $event->payload['e_chair_id'],
             'trip_id' => $event->payload['trip_id'] ?? null,
             'event_type' => "health_escalation_" . ($event->payload['prediction_type'] ?? 'unknown'),
-            'source_classification' => 'health',
+            'source_classification' => in_array($event->type, ['heart', 'temperature', 'mpu_monitoring']) ? 'health' : $event->type,
             'severity' => 'critical',
             'timestamp_ms' => $event->timestamp_ms,
         ]);

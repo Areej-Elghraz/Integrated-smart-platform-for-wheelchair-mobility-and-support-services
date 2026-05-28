@@ -21,14 +21,14 @@ class SystemPolicyEngine
             $actions[] = 'log_incident';
             $reasoning[] = "Severity is critical, triggering immediate notification and incident logging.";
             
-            if (in_array($event->type, ['health', 'emergency', 'obstacle'])) {
+            if (in_array($event->type, ['heart', 'temperature', 'mpu_monitoring', 'emergency', 'obstacle'])) {
                 $actions[] = 'pause_trip';
                 $reasoning[] = "Event type '{$event->type}' is safety-critical, requesting trip pause.";
             }
         }
 
         // 2. Specific escalation rules
-        if ($event->type === 'health' && $event->severity === 'critical') {
+        if (in_array($event->type, ['heart', 'temperature', 'mpu_monitoring']) && $event->severity === 'critical') {
             $actions[] = 'escalate_to_emergency';
             $reasoning[] = "Critical health event detected, escalating to emergency subsystem.";
         }

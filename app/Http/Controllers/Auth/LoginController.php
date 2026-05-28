@@ -15,19 +15,33 @@ class LoginController extends ApiController
     {
         // $deviceRequest = $request->input('device');
 
-        $user = $userService->getUserByEmail($request->email);
+        $login = $request->input('login') ?? $request->input('email') ?? $request->input('username');
+        $field = filter_var($login, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+
+        $user = $field === 'email' 
+            ? $userService->getUserByEmail($login) 
+            : \App\Models\User::where('username', $login)->first();
 
         if (!$user) {
-            throw ValidationException::withMessages(['email' => __('auth.failed')]);
+            $errorField = $request->has('email') ? 'email' : ($request->has('username') ? 'username' : 'login');
+            throw ValidationException::withMessages([$errorField => __('auth.failed')]);
         }
 
-
-        // dd(Auth::attempt($request->only('email', 'password')));
-
-        if (!Auth::attempt($request->only('email', 'password'))) {
+        if (!Auth::attempt([$field => $login, 'password' => $request->password], $request->remember ?? false)) {
             return $this->errorResponse(
                 __('auth.failed'),
                 401,
+            );
+        }
+
+        $user = auth('sanctum')->user();
+
+        if (is_null($user->email_verified_at)) {
+            // Log out the user since they are not verified
+            Auth::logout();
+            return $this->errorResponse(
+                'Please verify your email using the OTP sent to you before logging in.',
+                403,
             );
         }
 

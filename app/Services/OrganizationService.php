@@ -55,11 +55,12 @@ class OrganizationService
             $categoryId = $category['id'];
         }
 
-        // dd(isset($data['country_name']));
-        if (isset($data['country_name']) && isset($data['city_name'])) {
-            $geoData = $this->geoService->getOrCreateGeoData($data['country_name'], $data['city_name']);
-            $data['country_id'] = $geoData['country_id'];
-            $data['city_id'] = $geoData['city_id'];
+        if (!isset($data['country_id']) && !isset($data['city_id'])) {
+            if (isset($data['country_name']) && isset($data['city_name'])) {
+                $geoData = $this->geoService->getOrCreateGeoData($data['country_name'], $data['city_name']);
+                $data['country_id'] = $geoData['country_id'];
+                $data['city_id'] = $geoData['city_id'];
+            }
         }
 
         return \Illuminate\Support\Facades\DB::transaction(function () use ($user, $data, $imagePath, $with, $categoryId) {
@@ -109,12 +110,14 @@ class OrganizationService
             $categoryId = $category->id;
         }
 
-        if (!empty($data['country_name']) && !empty($data['city_name'])) {
-            $geoData = $this->geoService
-                ->getOrCreateGeoData($data['country_name'], $data['city_name']);
+        if (!isset($data['country_id']) && !isset($data['city_id'])) {
+            if (!empty($data['country_name']) && !empty($data['city_name'])) {
+                $geoData = $this->geoService
+                    ->getOrCreateGeoData($data['country_name'], $data['city_name']);
 
-            $data['country_id'] = $geoData['country_id'];
-            $data['city_id']    = $geoData['city_id'];
+                $data['country_id'] = $geoData['country_id'];
+                $data['city_id']    = $geoData['city_id'];
+            }
         }
 
         return \Illuminate\Support\Facades\DB::transaction(function () use ($user, $organization, $data, $imagePath, $with, $categoryId) {

@@ -25,6 +25,8 @@ return [
     'comment'      => ['singular' => 'टिप्पणी', 'plural'  => 'टिप्पणियाँ'],
     'language'     => ['singular' => 'भाषा', 'plural'  => 'भाषाएँ'],
     'visitor'      => ['singular' => 'यात्रा',          'plural' => 'यात्राएँ',],
+    'floor'        => ['singular' => 'मंजिला',         'plural' => 'मंजिलें',],
+    'map'          => ['singular' => 'नक्शा',          'plural' => 'नक्शे',],
   ],
 
   'actions' => [

@@ -24,6 +24,14 @@ Route::post('/signup', RegisterController::class)->name('auth.register');
 Route::post('/login', LoginController::class)->name('auth.login');
 Route::post('/refresh-token', RefreshTokenController::class)->name('auth.refresh-token')->middleware(['auth:sanctum', 'ability:' . TokenAbilityEnum::REMEMBER_TOKEN->value]);
 
+Route::post('/verify-otp', \App\Http\Controllers\Auth\VerifyOtpController::class)->name('auth.verify-otp');
+Route::post('/resend-otp', \App\Http\Controllers\Auth\ForgotPasswordController::class)->name('auth.forgot-password');
+Route::post('/forgot-password', \App\Http\Controllers\Auth\ForgotPasswordController::class)->name('auth.forgot-password');
+Route::post('/reset-password', \App\Http\Controllers\Auth\ResetPasswordController::class)->name('auth.reset-password');
+
+
+Route::get('/medical-conditions', [\App\Http\Controllers\MedicalConditionController::class, 'index'])->name('medical-conditions.index');
+
 Route::post('/support', [\App\Http\Controllers\SupportController::class, 'store'])->name('support.store');
 
 Route::middleware(['auth:sanctum', 'ability:' . TokenAbilityEnum::ACCESS_TOKEN->value])->group(function () {
@@ -50,20 +58,40 @@ Route::middleware(['auth:sanctum', 'ability:' . TokenAbilityEnum::ACCESS_TOKEN->
   Route::post('/places/{place}/favorite', [\App\Http\Controllers\FavoriteController::class, 'toggle'])->name('favorites.toggle');
   Route::post('/places/{place}/visit', [\App\Http\Controllers\PlaceController::class, 'visit'])->name('places.visit');
 
+  // Floors & Maps
+  Route::get('/organizations/{organization}/floors', [\App\Http\Controllers\FloorController::class, 'indexForOrganization'])->name('organizations.floors.index');
+  Route::post('/organizations/{organization}/floors', [\App\Http\Controllers\FloorController::class, 'storeForOrganization'])->name('organizations.floors.store');
+  Route::get('/places/{place}/floors', [\App\Http\Controllers\FloorController::class, 'indexForPlace'])->name('places.floors.index');
+  Route::post('/places/{place}/floors', [\App\Http\Controllers\FloorController::class, 'storeForPlace'])->name('places.floors.store');
+
+  Route::apiResource('floors', \App\Http\Controllers\FloorController::class)->only(['show', 'update', 'destroy']);
+
+  Route::post('/floors/{floor}/map', [\App\Http\Controllers\MapController::class, 'store'])->name('floors.map.store');
+  Route::get('/floors/{floor}/map', [\App\Http\Controllers\MapController::class, 'show'])->name('floors.map.show');
+  Route::delete('/floors/{floor}/map', [\App\Http\Controllers\MapController::class, 'destroy'])->name('floors.map.destroy');
+
   Route::delete('/reviews/{review}', [\App\Http\Controllers\ReviewController::class, 'destroy'])->name('reviews.destroy');
 
   // Locations
   Route::apiResource('countries', \App\Http\Controllers\CountryController::class);
   Route::apiResource('cities', \App\Http\Controllers\CityController::class);
-
-  // Emergency Contacts & SOS
-  Route::apiResource('emergency-contacts', \App\Http\Controllers\EmergencyContactController::class)->except(['show', 'update', 'edit', 'create']);
+  // SOS
   Route::post('/sos', [\App\Http\Controllers\SosController::class, 'trigger'])->name('sos.trigger');
   Route::post('/sos/cancel', [\App\Http\Controllers\SosController::class, 'cancel'])->name('sos.cancel');
 
-  // E-Chair
-  Route::post('/echair/verify', [\App\Http\Controllers\EChairController::class, 'verify'])->name('echair.verify');
-  Route::post('/echair/status', [\App\Http\Controllers\EChairController::class, 'status'])->name('echair.status');
+
+  // Wheelchairs
+  Route::post('/wheelchairs/connect', [\App\Http\Controllers\WheelchairController::class, 'connect'])->name('wheelchairs.connect');
+  Route::post('/wheelchairs/{wheelchairId}/disconnect', [\App\Http\Controllers\WheelchairController::class, 'disconnect'])->name('wheelchairs.disconnect');
+  Route::put('/wheelchairs/{wheelchairId}', [\App\Http\Controllers\WheelchairController::class, 'update'])->name('wheelchairs.update');
+  Route::post('/wheelchairs/{wheelchairId}/unassign', [\App\Http\Controllers\WheelchairController::class, 'unassign'])->name('wheelchairs.unassign');
+
+  Route::get('/wheelchairs/{wheelchairId}/vitals', [\App\Http\Controllers\WheelchairController::class, 'showVitals'])->name('wheelchairs.show_vitals');
+  Route::post('/wheelchairs/{wheelchairId}/vitals', [\App\Http\Controllers\WheelchairController::class, 'updateCurrentVitalState'])->name('wheelchairs.update_vitals');
+
+  Route::get('/wheelchairs/{wheelchairId}/sensor-readings', [\App\Http\Controllers\SensorReadingController::class, 'index'])->name('sensor_readings.index');
+  Route::post('/wheelchairs/{wheelchairId}/sensor-readings', [\App\Http\Controllers\SensorReadingController::class, 'store'])->name('sensor_readings.store');
+
 
   // Community
   Route::apiResource('posts', \App\Http\Controllers\Community\PostController::class)->except(['create', 'edit']);
@@ -73,6 +101,13 @@ Route::middleware(['auth:sanctum', 'ability:' . TokenAbilityEnum::ACCESS_TOKEN->
   Route::post('/posts/{post}/like', [\App\Http\Controllers\Community\LikeController::class, 'toggleLike'])->name('posts.like');
   Route::post('/posts/{post}/hide', [\App\Http\Controllers\Community\PostController::class, 'hide'])->name('posts.hide');
   Route::get('/community/users/{user}', [\App\Http\Controllers\Community\ProfileController::class, 'show'])->name('community.profile');
+
+  // Community - Friends
+  Route::get('/community/friends', [\App\Http\Controllers\Community\FriendController::class, 'index'])->name('community.friends.index');
+  Route::get('/community/friends/requests', [\App\Http\Controllers\Community\FriendController::class, 'requests'])->name('community.friends.requests');
+  Route::post('/community/friends/send', [\App\Http\Controllers\Community\FriendController::class, 'send'])->name('community.friends.send');
+  Route::post('/community/friends/{user}/handle', [\App\Http\Controllers\Community\FriendController::class, 'handle'])->name('community.friends.handle');
+  Route::delete('/community/friends/{user}/remove', [\App\Http\Controllers\Community\FriendController::class, 'remove'])->name('community.friends.remove');
 
   // Comments CRUD and engagement
   Route::post('/posts/{post}/comments', [\App\Http\Controllers\CommentController::class, 'storePost'])->name('posts.comments.store');
@@ -95,23 +130,21 @@ Route::middleware(['auth:sanctum', 'ability:' . TokenAbilityEnum::ACCESS_TOKEN->
   Route::post('/chatbot/sessions', [\App\Http\Controllers\ChatBot\MessageController::class, 'storeSession'])->name('chatbot.sessions.store');
   Route::get('/chatbot/sessions/{session}', [\App\Http\Controllers\ChatBot\MessageController::class, 'showSession'])->name('chatbot.sessions.show');
   Route::delete('/chatbot/sessions/{session}', [\App\Http\Controllers\ChatBot\MessageController::class, 'destroySession'])->name('chatbot.sessions.destroy');
-  
+
   Route::post('/chatbot/sessions/{session}/chat', [\App\Http\Controllers\ChatBot\MessageController::class, 'chat'])->name('chatbot.chat');
   Route::post('/chatbot/messages/{message}/reaction', [\App\Http\Controllers\ChatBot\MessageController::class, 'reactToMessage'])->name('chatbot.messages.reaction');
 
-  // AI / HW Communication
-  Route::apiResource('trips', \App\Http\Controllers\TripController::class);
-  Route::post('/trips/{trip}/updates', [\App\Http\Controllers\TripController::class, 'addUpdate'])->name('trips.updates.add');
+  // Trips & Events
+  Route::post('/wheelchairs/{wheelchairId}/trips', [\App\Http\Controllers\TripController::class, 'startTrip'])->name('trips.start');
+  Route::get('/trips/{tripId}/movement-states', [\App\Http\Controllers\TripController::class, 'movementStates'])->name('trips.movement_states_get');
+  Route::post('/trips/{tripId}/movement-states', [\App\Http\Controllers\TripController::class, 'updateMovementStatus'])->name('trips.update_movement');
+  Route::post('/trips/{tripId}/end', [\App\Http\Controllers\TripController::class, 'endTrip'])->name('trips.end');
+  Route::post('/trips/{tripId}/events', [\App\Http\Controllers\EventController::class, 'storeTripEvent'])->name('trips.store_event');
+  // Dashboards
+  Route::get('/dashboard/user', [\App\Http\Controllers\DashboardController::class, 'userDashboard'])->name('dashboard.user');
+  Route::get('/dashboard/companion', [\App\Http\Controllers\DashboardController::class, 'companionDashboard'])->name('dashboard.companion');
+  Route::get('/dashboard/doctor', [\App\Http\Controllers\DashboardController::class, 'doctorDashboard'])->name('dashboard.doctor');
 
-  Route::prefix('ai-hw')->group(function () {
-    Route::post('/telemetry', [\App\Http\Controllers\AIHWCommunicationController::class, 'telemetry'])->name('ai-hw.telemetry');
-    Route::post('/events', [\App\Http\Controllers\AIHWCommunicationController::class, 'events'])->name('ai-hw.events');
-    Route::post('/ai-logs', [\App\Http\Controllers\AIHWCommunicationController::class, 'aiLogs'])->name('ai-hw.ai-logs');
-    Route::post('/device-status', [\App\Http\Controllers\AIHWCommunicationController::class, 'deviceStatus'])->name('ai-hw.device-status');
-    Route::post('/obstacle-logs', [\App\Http\Controllers\AIHWCommunicationController::class, 'obstacleLogs'])->name('ai-hw.obstacle-logs');
-    Route::post('/health-telemetry', [\App\Http\Controllers\AIHWCommunicationController::class, 'healthTelemetry'])->name('ai-hw.health-telemetry');
-    Route::post('/health-predictions', [\App\Http\Controllers\AIHWCommunicationController::class, 'healthPredictions'])->name('ai-hw.health-predictions');
-    Route::post('/emergency', [\App\Http\Controllers\AIHWCommunicationController::class, 'emergency'])->name('ai-hw.emergency');
-  });
+  // Live Locations
+  Route::post('/location/user', [\App\Http\Controllers\LocationController::class, 'userLocation'])->name('location.user');
 });
-

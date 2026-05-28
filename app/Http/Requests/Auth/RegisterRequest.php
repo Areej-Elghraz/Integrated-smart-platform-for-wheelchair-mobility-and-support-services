@@ -18,38 +18,47 @@ class RegisterRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $rules = [
             'name' => 'required|string|max:255',
+            'username' => 'required|string|unique:users,username|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|confirmed|string|min:6', // confirmed
+            'password' => 'required|confirmed|string|min:6',
             'language' => ['sometimes', new \Illuminate\Validation\Rules\Enum(\App\Enums\LanguagePreferenceEnum::class)],
             'phone' => 'sometimes|nullable|phone:AUTO,MOBILE|unique:users,phone',
-            'role' => 'sometimes|nullable|string|in:user,organization',
-            // 'policies'   => 'required|boolean',
-            // 'url'        => 'required|url',
-            // user
-            'phone' => 'required_if:role,user|phone:AUTO,MOBILE|unique:users,phone',
-            'age' => 'required_if:role,user|integer',
-            'follow_doctor' => 'required_if:role,user|boolean',
-            // organization
+            'role' => 'sometimes|nullable|string|in:user,companion,doctor,organization,organization_admin',
+            
+            // user role specific
+            'gender' => 'required_if:role,user|string|in:male,female',
+            'birth_date' => 'required_if:role,user|date|before:today',
+            'weight' => 'required_if:role,user|numeric|min:1',
+            'height' => 'required_if:role,user|numeric|min:1',
+            'doctor_username' => 'sometimes|nullable|string|exists:users,username',
+            'medical_condition_ids' => 'sometimes|array',
+            'medical_condition_ids.*' => 'exists:medical_conditions,id',
+            
+            // companion role specific
+            'target_username' => 'required_if:role,companion|string|exists:users,username',
+            
+            // organization role specific
             'latitude' => 'required_if:role,organization|numeric|between:-90,90',
             'longitude' => 'required_if:role,organization|numeric|between:-180,180',
-            'country_name' => 'required_if:role,organization|string|max:255',
-            'city_name' => 'required_if:role,organization|string|max:255',
-
+            'country_name' => 'sometimes|nullable|string|max:255',
+            'city_name' => 'sometimes|nullable|string|max:255',
+            'country_id' => 'sometimes|nullable|exists:countries,id',
+            'city_id' => 'sometimes|nullable|exists:cities,id',
             'category_id' => 'sometimes|nullable|required_if:role,organization|exists:categories,id',
             'category_name' => 'sometimes|required_if:role,organization|required_without:category_id|string|max:255',
-
             'image' => 'required_if:role,organization|image|mimes:png,jpg,jpeg,gif|max:2048',
             'description' => 'sometimes|nullable|string',
-
-            // 'location'      => 'sometimes|nullable|string',
-            // 'category_name' => 'required_if:role,organization|string|max:255',
-            // 'device_id'   => 'required|string',
-            // 'device_name' => 'required|string',
-            // 'device_type' => 'required|string',
-
-            // 'avatar'   => 'nullable|image|mimes:png,jpg,jpeg',
         ];
+
+        if ($this->input('role') === 'organization') {
+            $rules['country_name'] = 'required_without:country_id|string|max:255';
+            $rules['city_name'] = 'required_without:city_id|string|max:255';
+            $rules['country_id'] = 'required_without:country_name|exists:countries,id';
+            $rules['city_id'] = 'required_without:city_name|exists:cities,id';
+        }
+
+        return $rules;
     }
 }

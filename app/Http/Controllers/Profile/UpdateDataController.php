@@ -24,9 +24,17 @@ class UpdateDataController extends ApiController
             'name'                 => $request->name ?? $user->name,
             'email'                => $request->email ?? $user->email,
             'phone'                => $request->phone ?? $user->phone,
-            'image'                => $path ?? null,
+            'gender'               => $request->gender ?? $user->gender,
+            'birth_date'           => $request->birth_date ?? $user->birth_date,
+            'weight'               => $request->weight ?? $user->weight,
+            'height'               => $request->height ?? $user->height,
+            'image'                => $path ?? $user->getRawOriginal('image'),
             'logout_other_devices' => $request->logout_other_devices ?? false,
         ]);
+
+        if ($request->has('medical_condition_ids')) {
+            $user->medicalConditions()->sync($request->medical_condition_ids);
+        }
 
         return $this->successResponse(message: __('auth.profile_data_changed_success'));
     }

@@ -118,6 +118,45 @@
 - **Description:** Retrieve a paginated list of Users who liked this comment.
 
 ---
+### 17. Get Friends List
+#### Endpoint Information
+- **HTTP Method:** `GET`
+- **Full URL:** `/api/community/friends`
+- **Description:** Retrieve the list of accepted friends for the authenticated user.
+
+### 18. Get Friend Requests
+#### Endpoint Information
+- **HTTP Method:** `GET`
+- **Full URL:** `/api/community/friends/requests`
+- **Description:** Retrieve the list of pending friend requests sent to the authenticated user.
+
+### 19. Send Friend Request
+#### Endpoint Information
+- **HTTP Method:** `POST`
+- **Full URL:** `/api/community/friends/send`
+- **Description:** Send a friend request to a user. Broadcasts `friend.request.received` event.
+
+| Attribute | Validation | Description/Options | Example |
+|---|---|---|---|
+| `user_id` | `required\|integer\|exists:users,id\|different:auth.id` | ID of the target user | `42` |
+
+### 20. Handle Friend Request
+#### Endpoint Information
+- **HTTP Method:** `POST`
+- **Full URL:** `/api/community/friends/{user}/handle`
+- **Description:** Accept or reject a friend request from a user. Accepts broadcast `friend.request.accepted` event, triggers a `RequestAcceptedMail`, and initializes a chat conversation if accepted.
+
+| Attribute | Validation | Description/Options | Example |
+|---|---|---|---|
+| `action` | `required\|string\|in:accept,reject` | Accept or reject action | `accept` |
+
+### 21. Remove Friend
+#### Endpoint Information
+- **HTTP Method:** `DELETE`
+- **Full URL:** `/api/community/friends/{user}/remove`
+- **Description:** Remove an accepted friend relationship. The chat history is deliberately preserved, and the removal is tracked in `audit_logs`.
+
+---
 # Profile Endpoints
 ### Update Language
 #### Endpoint Information
@@ -126,3 +165,4 @@
 - **Description:** Update the authenticated user's native application language.
 - **Body Params:**
   - `language` (string, required): One of `ar|de|en|fr|ge|hi|ko|vi` bound to ENUM.
+

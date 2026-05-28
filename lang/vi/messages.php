@@ -25,6 +25,8 @@ return [
     'comment' => ['singular' => 'Bình luận', 'plural' => 'Bình luận'],
     'language' => ['singular' => 'Ngôn ngữ', 'plural' => 'Ngôn ngữ'],
     'visitor' => ['singular' => 'Lượt truy cập', 'plural' => 'Lượt truy cập', ],
+    'floor' => ['singular' => 'tầng', 'plural' => 'tầng', ],
+    'map' => ['singular' => 'bản đồ', 'plural' => 'bản đồ', ],
   ],
 
   'actions' => [

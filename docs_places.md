@@ -1,17 +1,14 @@
 ## Places Endpoints
 
-### 1. List Places
+### 1. List Places for a Floor
 #### Endpoint Information
 - **HTTP Method:** `GET`
-- **Full URL:** `/api/places`
-- **Description:** Returns places based on optional filters, mapped to specific categories or organizations.
+- **Full URL:** `/api/floors/{floor}/places`
+- **Description:** Returns places located on a specific floor, optionally filtered by category or metadata.
 
 #### Request Details
 - **Query Parameters:**
   - `category_id` (integer, optional)
-  - `organization_id` (integer, optional)
-  - `country_id` (integer, optional)
-  - `has_categories` (boolean, optional)
   - `include` (string, optional): E.g., `categories,organization`
 
 #### Responses
@@ -32,11 +29,11 @@
 }
 ```
 
-### 2. Create Place
+### 2. Create Place for a Floor
 #### Endpoint Information
 - **HTTP Method:** `POST`
-- **Full URL:** `/api/places`
-- **Description:** Stores a new place attached to the user or an organization.
+- **Full URL:** `/api/floors/{floor}/places`
+- **Description:** Stores a new place attached to the specified floor.
 
 #### Request Body
 ```json

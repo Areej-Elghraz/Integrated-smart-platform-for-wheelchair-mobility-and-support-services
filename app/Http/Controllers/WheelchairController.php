@@ -29,15 +29,30 @@ class WheelchairController extends ApiController
 
         DB::beginTransaction();
         try {
+            $wheelchair = Wheelchair::where('serial_number', $validated['serial_number'])->first();
+
+            if ($wheelchair) {
+                if ($wheelchair->user_id !== null && $wheelchair->user_id !== $user->id) {
+                    return $this->errorResponse('This wheelchair is already connected to another user.', 403);
+                }
+            } else {
+                $wheelchair = Wheelchair::create([
+                    'serial_number' => $validated['serial_number'],
+                    'api_key' => 'wh_' . \Illuminate\Support\Str::random(32),
+                    'connection_state' => 'offline'
+                ]);
+            }
+
+            // Generate an api_key if it doesn't have one (for older records)
+            if (empty($wheelchair->api_key)) {
+                $wheelchair->api_key = 'wh_' . \Illuminate\Support\Str::random(32);
+            }
+
             // Unassign this user from any other wheelchair
             Wheelchair::where('user_id', $user->id)
                 ->where('serial_number', '!=', $validated['serial_number'])
+                ->orWhere('id', '!=', $wheelchair->id)
                 ->update(['user_id' => null, 'connection_state' => 'offline']);
-
-            $wheelchair = Wheelchair::firstOrCreate(
-                ['serial_number' => $validated['serial_number']],
-                ['battery' => 100, 'voltage' => 24, 'current' => 0, 'temperature' => 25, 'connection_state' => 'offline']
-            );
 
             $wheelchair->update([
                 'user_id' => $user->id,
@@ -50,12 +65,13 @@ class WheelchairController extends ApiController
 
             $diseases = [];
             if ($user && $user->medicalConditions) {
-                $diseases = $user->medicalConditions->pluck('name'); // Assumes 'name' field exists in medical_conditions
+                $diseases = $user->medicalConditions->pluck('name');
             }
 
             return $this->successResponse('Wheelchair connected successfully.', parameters: [
                 'data' => [
                     'wheelchair_id' => $wheelchair->id,
+                    'api_key' => $wheelchair->api_key,
                     'user_id' => $user ? $user->id : null,
                     'user_weight' => $user ? $user->weight : null,
                     'user_height' => $user ? $user->height : null,
@@ -97,31 +113,6 @@ class WheelchairController extends ApiController
 
         $wheelchair->update($validated);
 
-        // Check for low battery
-        if (isset($validated['battery']) && $validated['battery'] <= 20) {
-            $existingBatteryEvent = Event::findDuplicate(
-                $wheelchair->id,
-                'battery',
-                'high',
-                'system'
-            );
-
-            if ($existingBatteryEvent) {
-                $existingBatteryEvent->touch();
-            } else {
-                $event = Event::create([
-                    'wheelchair_id' => $wheelchair->id,
-                    'trip_id' => null,
-                    'type' => 'battery',
-                    'severity' => 'high',
-                    'message' => 'Low battery warning: ' . $validated['battery'] . '% remaining.',
-                    'data' => ['battery' => $validated['battery']],
-                    'event_source' => 'system',
-                ]);
-                broadcast(new WheelchairEventOccurred($event));
-            }
-        }
-
         broadcast(new WheelchairUpdated($wheelchair));
 
         return $this->successResponse('Wheelchair updated successfully.', parameters: ['data' => $wheelchair]);
@@ -160,12 +151,10 @@ class WheelchairController extends ApiController
     /**
      * Update current vital state and record an event.
      */
-    public function updateCurrentVitalState(Request $request, $wheelchairId): JsonResponse
+    public function updateCurrentVitalState(Request $request): JsonResponse
     {
-        $wheelchair = Wheelchair::findOrFail($wheelchairId);
-        $this->authorize('update', $wheelchair);
-
         $validated = $request->validate([
+            'trip_id' => 'nullable|exists:trips,id',
             'heart_rate' => 'required|numeric',
             'heart_rate_status' => 'required|string|in:normal,medium,critical',
             'temperature' => 'required|numeric',
@@ -178,24 +167,23 @@ class WheelchairController extends ApiController
             'recommendation' => 'nullable|string',
         ]);
 
+        $wheelchair = $request->get('authenticated_wheelchair');
+        if (!$wheelchair) {
+            return $this->errorResponse('Unauthorized wheelchair.', 403);
+        }
+
         DB::beginTransaction();
         try {
             $aiData = $wheelchair->aiRecommendations()->updateOrCreate(
                 ['wheelchair_id' => $wheelchair->id],
-                $validated
+                \Illuminate\Support\Arr::except($validated, ['trip_id'])
             );
-
-            // Find active trip
-            $activeTrip = Trip::where('wheelchair_id', $wheelchair->id)
-                ->where('status', 'started')
-                ->latest()
-                ->first();
 
             // Record event
             $event = Event::create([
                 'wheelchair_id' => $wheelchair->id,
-                'trip_id' => $activeTrip ? $activeTrip->id : null,
-                'type' => $validated['type'] ?? 'heart',
+                'trip_id' => $validated['trip_id'] ?? null,
+                'type' => $validated['type'] ?? 'health',
                 'severity' => $validated['risk_level'],
                 'message' => $validated['reason'] ?? $validated['recommendation'] ?? 'Health update',
                 'data' => [
@@ -209,7 +197,7 @@ class WheelchairController extends ApiController
 
             // Automatic SOS Trigger on critical fall (Fainting/Accident)
             if ($validated['fall_status'] === 'critical') {
-                $user = $wheelchair->assignedUser;
+                $user = $wheelchair->user;
                 if ($user) {
                     $friendsOfMine = $user->friendsOfMine()->wherePivot('status', 'accepted')->get();
                     $friendOf = $user->friendOf()->wherePivot('status', 'accepted')->get();

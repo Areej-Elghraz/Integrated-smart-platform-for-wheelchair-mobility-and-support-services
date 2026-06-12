@@ -14,11 +14,12 @@ class StoreEventRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'type'         => 'required|string|in:health,obstacle,sos,battery',
-            'severity'     => 'required|string|in:low,medium,high',
-            'message'      => 'required|string|max:1000',
-            'data'         => 'required|array',
-            'event_source' => 'nullable|string|in:ai,system',
+            'trip_id'       => 'nullable|exists:trips,id',
+            'type'          => 'required|string|in:health,obstacle,sos',
+            'severity'      => 'required|string|in:low,medium,high',
+            'message'       => 'required|string|max:1000',
+            'data'          => 'required|array',
+            'event_source'  => 'nullable|string|in:ai,system',
         ];
     }
 

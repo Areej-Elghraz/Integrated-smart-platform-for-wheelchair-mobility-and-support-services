@@ -6,8 +6,7 @@ use App\Http\Controllers\ApiController;
 use App\Http\Requests\Floor\StoreFloorRequest;
 use App\Http\Requests\Floor\UpdateFloorRequest;
 use App\Models\Floor;
-use App\Models\Organization;
-use App\Models\Place;
+use App\Models\Building;
 use Illuminate\Http\Request;
 
 class FloorController extends ApiController
@@ -18,19 +17,21 @@ class FloorController extends ApiController
     protected function getRelations(Request $request): array
     {
         $includes = explode(',', $request->query('include', ''));
-        $allowed = ['map', 'places', 'organization', 'place'];
+        $allowed = Floor::ALLOWED_RELATIONS;
         return array_intersect($includes, $allowed);
     }
 
+
+
     /**
-     * Display a listing of floors for a specific organization.
+     * Display a listing of floors for a specific building.
      */
-    public function indexForOrganization(Organization $organization, Request $request)
+    public function indexForBuilding(Building $building, Request $request)
     {
-        $this->authorize('view', $organization);
+        $this->authorize('view', $building);
 
         $with = $this->getRelations($request);
-        $floors = $organization->floors()->with($with)->get();
+        $floors = $building->floors()->with($with)->get();
 
         return $this->successResponse(
             message: __('messages.actions.retrieved_success', ['resource' => __('messages.resources.floor.plural')]),
@@ -39,47 +40,16 @@ class FloorController extends ApiController
         );
     }
 
-    /**
-     * Display a listing of floors for a specific place.
-     */
-    public function indexForPlace(Place $place, Request $request)
-    {
-        $this->authorize('view', $place);
 
-        $with = $this->getRelations($request);
-        $floors = $place->floors()->with($with)->get();
-
-        return $this->successResponse(
-            message: __('messages.actions.retrieved_success', ['resource' => __('messages.resources.floor.plural')]),
-            status: 200,
-            parameters: $floors->toArray()
-        );
-    }
 
     /**
-     * Store a newly created floor for an organization.
+     * Store a newly created floor for a building.
      */
-    public function storeForOrganization(Organization $organization, StoreFloorRequest $request)
+    public function storeForBuilding(Building $building, StoreFloorRequest $request)
     {
-        $this->authorize('update', $organization);
+        $this->authorize('update', $building);
 
-        $floor = $organization->floors()->create($request->validated());
-
-        return $this->successResponse(
-            message: __('messages.actions.created_success', ['resource' => __('messages.resources.floor.singular')]),
-            status: 201,
-            parameters: $floor->toArray()
-        );
-    }
-
-    /**
-     * Store a newly created floor for a place.
-     */
-    public function storeForPlace(Place $place, StoreFloorRequest $request)
-    {
-        $this->authorize('update', $place);
-
-        $floor = $place->floors()->create($request->validated());
+        $floor = $building->floors()->create($request->validated());
 
         return $this->successResponse(
             message: __('messages.actions.created_success', ['resource' => __('messages.resources.floor.singular')]),

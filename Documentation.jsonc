@@ -1,5 +1,25 @@
 [
   // ==========================
+  // GLOBAL API STANDARDS (PLEASE READ FIRST)
+  // ==========================
+  // 1. HEADERS & TOKEN:
+  //    - ALL endpoints (except /login, /signup, /forget-password, /reset-password) require an Authorization header.
+  //    - Header Format: 
+  //      "headers": {
+  //         "Authorization": "Bearer {your_token_here}",
+  //         "Accept": "application/json"
+  //      }
+  //
+  // 2. HTTP METHODS & DATA TYPES:
+  //    - GET Requests: Any data shown in the "request" block must be sent as "query_parameters" in the URL (e.g., ?category_id=1&has_categories=true).
+  //    - POST/PUT/PATCH Requests: Any data shown in the "request" block must be sent as the "body" of the request (JSON or FormData if files exist).
+  //    - PATH Parameters: Any endpoint containing curly braces like {id} or {session} means this is a URL parameter (e.g., /api/places/5).
+  //
+  // 3. FILE UPLOADS:
+  //    - If "media" or "image" is required, you must send the request body as "multipart/form-data" instead of "application/json".
+  // ==========================
+
+  // ==========================
   // AUTHENTICATION
   // ==========================
   {
@@ -319,16 +339,158 @@
     }
   },
   // ==========================
+  // BUILDINGS
+  // ==========================
+  {
+    "endpoint": "GET /api/organizations/{organization}/buildings",
+    "description": "List buildings for an organization",
+    "request": {},
+    "response": {
+      "message": "Buildings retrieved successfully.",
+      "data": [
+        {
+          "id": 1,
+          "name": "Main Building",
+          "latitude": 30.0,
+          "longitude": 31.0
+        }
+      ]
+    }
+  },
+  {
+    "endpoint": "POST /api/organizations/{organization}/buildings",
+    "description": "Create a new building for an organization",
+    "request": {
+      "name": "East Wing",
+      "description": "East side entrance",
+      "latitude": 30.01,
+      "longitude": 31.02,
+      "image": "(file upload optional)"
+    },
+    "response": {
+      "message": "Building created successfully.",
+      "data": {
+        "id": 2,
+        "name": "East Wing"
+      }
+    }
+  },
+  {
+    "endpoint": "GET /api/buildings/{id}",
+    "description": "Get a specific building",
+    "request": {
+      "include": "floors,places"
+    },
+    "response": {
+      "message": "Building retrieved successfully.",
+      "data": {
+        "id": 1,
+        "name": "Main Building",
+        "floors": []
+      }
+    }
+  },
+  {
+    "endpoint": "PUT /api/buildings/{id}",
+    "description": "Update a building",
+    "request": {
+      "name": "Updated Building Name"
+    },
+    "response": {
+      "message": "Building updated successfully.",
+      "data": {
+        "id": 1,
+        "name": "Updated Building Name"
+      }
+    }
+  },
+  {
+    "endpoint": "DELETE /api/buildings/{id}",
+    "description": "Delete a building",
+    "request": {},
+    "response": {
+      "message": "Building deleted successfully.",
+      "data": []
+    }
+  },
+  // ==========================
+  // FLOORS
+  // ==========================
+  {
+    "endpoint": "GET /api/buildings/{building}/floors",
+    "description": "List floors for a building",
+    "request": {},
+    "response": {
+      "message": "Floors retrieved successfully.",
+      "data": [
+        {
+          "id": 1,
+          "name": "Ground Floor",
+          "number": 1
+        }
+      ]
+    }
+  },
+  {
+    "endpoint": "POST /api/buildings/{building}/floors",
+    "description": "Create a new floor in a building",
+    "request": {
+      "name": "First Floor",
+      "number": 2
+    },
+    "response": {
+      "message": "Floor created successfully.",
+      "data": {
+        "id": 2,
+        "name": "First Floor"
+      }
+    }
+  },
+  {
+    "endpoint": "GET /api/floors/{id}",
+    "description": "Get a specific floor",
+    "request": {
+      "include": "places"
+    },
+    "response": {
+      "message": "Floor retrieved successfully.",
+      "data": {
+        "id": 1,
+        "name": "Ground Floor"
+      }
+    }
+  },
+  {
+    "endpoint": "PUT /api/floors/{id}",
+    "description": "Update a floor",
+    "request": {
+      "name": "Updated Floor Name"
+    },
+    "response": {
+      "message": "Floor updated successfully.",
+      "data": {
+        "id": 1,
+        "name": "Updated Floor Name"
+      }
+    }
+  },
+  {
+    "endpoint": "DELETE /api/floors/{id}",
+    "description": "Delete a floor",
+    "request": {},
+    "response": {
+      "message": "Floor deleted successfully.",
+      "data": []
+    }
+  },
+  // ==========================
   // PLACES
   // ==========================
   {
-    "endpoint": "GET /api/places",
-    "description": "List places visible to the user. Accepts filters.",
+    "endpoint": "GET /api/floors/{floor}/places",
+    "description": "List places for a floor. Accepts filters.",
     "request": {
       "category_id": 2,
-      "organization_id": 1,
-      "country_id": 2,
-      "has_categories": true,
       "include": "categories,organization"
     },
     "response": {
@@ -343,16 +505,23 @@
     }
   },
   {
-    "endpoint": "POST /api/places",
-    "description": "Create a new place",
+    "endpoint": "POST /api/floors/{floor}/places",
+    "description": "Create a new place for a floor",
     "request": {
       "name": "Accessibility Ramp A",
-      "category_name": "Ramps",
+      "category_id": 1,
       "country_name": "USA",
       "city_name": "New York",
-      "organization_id": 1,
       "description": "Ramp at the main entrance",
-      "image": "(file upload optional)"
+      "image": "(file upload optional)",
+      "points": [
+        {"x": 10.5, "y": 20.3},
+        {"x": 30.1, "y": 40.2}
+      ],
+      "x": 20.3,
+      "y": 30.25,
+      "z": 1.0,
+      "rotation": 90.0
     },
     "response": {
       "message": "Place created successfully.",
@@ -658,20 +827,27 @@
   {
     "endpoint": "POST /api/chatbot/sessions/{session}/chat",
     "description": "Send a message to the AI chatbot. Flutter sends ONLY the message. Laravel automatically collects user profile, health state, wheelchair status, trip info, doctor, companions, and latest alerts and sends them as hidden context to the Python AI service.",
-    "request": {
-      "message": "انا حاسس بتعب ومش عارف اروح فين",
+    "headers": {
+      "Authorization": "Bearer {user_token}",
+      "Accept": "application/json"
+    },
+    "path_parameters": {
+      "session": "Integer (The Chat Session ID)"
+    },
+    "body": {
+      "message": "انا حاسس بتعب ومش عارف اروح فين", // (example: String)
       "media": "(file upload optional array)"
     },
     // هذا الكائن لا يرسله الفلاتر — لارافل يبنيه تلقائياً ويرسله للبايثون خلف الكواليس
     "backend_context_payload_sent_to_ai": {
-      "user_text": "انا حاسس بتعب ومش عارف اروح فين",
+      "user_text": "انا حاسس بتعب ومش عارف اروح فين", // (example: String)
       "context": {
         "user_profile": {
-          "name": "Ahmed",
-          "medical_condition": "Lower Body Paralysis",
-          "age": 28,
-          "weight": 70,
-          "gender": "male"
+          "name": "Ahmed", // (example: String)
+          "medical_condition": "Lower Body Paralysis", // (example: String)
+          "age": 28, // (example: Integer)
+          "weight": 70, // (example: Integer)
+          "gender": "male" // (options: "male", "female")
         },
         "relations": {
           "doctor": { "name": "Dr. Smith", "phone": "+201111111" },
@@ -680,25 +856,25 @@
           ]
         },
         "wheelchair_status": {
-          "serial_number": "CHAIR-001",
-          "battery": 80,
-          "connection": "online"
+          "serial_number": "CHAIR-001", // (example: String)
+          "battery": 80, // (example: Integer 0-100)
+          "connection": "online" // (options: "online", "offline")
         },
         "current_health_state": {
-          "heart_rate": 110,
-          "temperature": 37.5,
+          "heart_rate": 110, // (example: Integer)
+          "temperature": 37.5, // (example: Float)
           "mpu_monitoring": {
-            "angle": 45,
-            "fall_detected": true
+            "angle": 45, // (example: Float)
+            "fall_detected": true // (options: true, false)
           }
         },
         "current_trip": {
-          "is_active": true,
-          "destination": "Hospital",
-          "current_coordinates": { "x": 10.5, "y": 20.2 }
+          "is_active": true, // (options: true, false)
+          "destination": "Hospital", // (example: String)
+          "current_coordinates": { "x": 10.5, "y": 20.2 } // (example: Floats)
         },
         "latest_alerts": {
-          "heart": { "message": "High Heart Rate Detected", "severity": "critical", "timestamp": "2026-05-28T13:10:00Z" },
+          "heart": { "message": "High Heart Rate Detected", "severity": "critical", "timestamp": "2026-05-28T13:10:00Z" }, // (severity options: "normal", "medium", "critical")
           "temperature": null,
           "mpu_monitoring": { "message": "High Fall Risk", "severity": "critical", "timestamp": "2026-05-28T13:15:00Z" },
           "obstacle": { "message": "Stairs ahead", "severity": "medium", "timestamp": "2026-05-28T09:50:00Z" },
@@ -717,7 +893,10 @@
         "id": 2,
         "sender_type": "bot",
         "content": "سلامتك يا أحمد. ألاحظ أن نبضات قلبك مرتفعة قليلاً وبطاريتك كويسة. هل تحب أن أرسل رسالة استغاثة (SOS) للمرافقة منى؟"
-      }
+      },
+      "intent": "health_complaint", // (options: "greeting", "health_complaint", "navigation", "emergency", "general")
+      "confidence": 0.98, // (example: Float 0.0 to 1.0)
+      "language": "ar" // (options: "ar", "en")
     }
   },
   {

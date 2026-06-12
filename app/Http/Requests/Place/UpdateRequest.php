@@ -11,12 +11,23 @@ class UpdateRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation()
+    {
+        if ($this->has('points') && is_string($this->points)) {
+            $points = json_decode($this->points, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $this->merge([
+                    'points' => $points,
+                ]);
+            }
+        }
+    }
+
     public function rules(): array
     {
         return [
             'name'               => 'sometimes|string|max:255',
             'description'        => 'sometimes|string',
-            'organization_id'    => 'sometimes|exists:organizations,id',
             'category_id'        => 'sometimes|required_without:category_name|exists:categories,id',
             'category_name'      => 'sometimes|required_without:category_id|string|max:255',
             'country_name'       => 'sometimes|required_without:country_id|string|max:255',
@@ -25,9 +36,13 @@ class UpdateRequest extends FormRequest
             'city_id'            => 'sometimes|required_without:city_name|exists:cities,id',
             'image'              => 'sometimes|image|mimes:png,jpg,jpeg,gif|max:2048',
             'accessibility_data' => 'nullable|array',
+            'map_id'             => 'nullable|exists:maps,id',
             'floor_id'           => 'nullable|exists:floors,id',
-            'x'                  => 'sometimes|required|numeric',
-            'y'                  => 'sometimes|required|numeric',
+            'points'             => 'sometimes|required|array',
+            'points.*.x'         => 'required_with:points|numeric',
+            'points.*.y'         => 'required_with:points|numeric',
+            'x'                  => 'nullable|numeric',
+            'y'                  => 'nullable|numeric',
             'z'                  => 'nullable|numeric',
             'rotation'           => 'nullable|numeric',
         ];

@@ -28,10 +28,11 @@ class OrganizationResource extends JsonResource
             'updated_at' => $this->updated_at,
 
             // Relations
-            // 'country' => new CountryResource($this->whenLoaded('country')),
-            // 'city' => new CityResource($this->whenLoaded('city')),
+            'country' => new CountryResource($this->whenLoaded('country')),
+            'city' => new CityResource($this->whenLoaded('city')),
             'categories' => CategoryResource::collection($this->whenLoaded('categories')),
-            'places' => PlaceResource::collection($this->whenLoaded('places')),
+            'buildings' => buildingResource::collection($this->whenLoaded('buildings')),
+            // 'floors' => FloorResource::collection($this->whenLoaded('floors')),
             'owner' => $this->whenLoaded('owner', function () {
                 return [
                     'id' => $this->owner->id,

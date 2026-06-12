@@ -38,9 +38,8 @@ class OrganizationController extends ApiController
                 'categories.children',
                 'categories.organizations',
                 'categories.places',
-                'places',
-                'places.categories',
-                'places.organization',
+                'buildings.floors.places',
+                'buildings.organization',
             ];
             if (in_array($relation, $access)) {
                 return [$relation => function ($q) use ($user) {

@@ -34,12 +34,11 @@ class FavoritesTest extends TestCase
 
         $place = Place::create([
             'name' => 'Favorite Place',
-            'category_id' => $category->id,
-            'organization_id' => $organization->id,
             'owner_id' => $user->id,
             'description' => 'A nice place',
             'x' => 10.0,
             'y' => 20.0,
+            'points' => [['x' => 10.0, 'y' => 20.0], ['x' => 15.0, 'y' => 25.0]],
         ]);
 
         $user->favorites()->attach($place->id);
@@ -68,8 +67,6 @@ class FavoritesTest extends TestCase
         for ($i = 0; $i < 16; $i++) {
             $place = Place::create([
                 'name' => "Place $i",
-                'category_id' => $category->id,
-                'organization_id' => $organization->id,
                 'owner_id' => $user->id,
                 'x' => 0, 
                 'y' => 0

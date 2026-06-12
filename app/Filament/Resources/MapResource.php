@@ -38,12 +38,6 @@ class MapResource extends Resource
                 Forms\Components\TextInput::make('height')
                     ->required()
                     ->numeric(),
-                Forms\Components\Textarea::make('origin')
-                    ->columnSpanFull(),
-                Forms\Components\TextInput::make('resolution')
-                    ->required()
-                    ->numeric()
-                    ->default(0.05),
             ]);
     }
 
@@ -62,9 +56,6 @@ class MapResource extends Resource
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('height')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('resolution')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')

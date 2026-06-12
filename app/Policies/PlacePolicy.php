@@ -26,7 +26,7 @@ class PlacePolicy
             $org = $user->organizationRoleOrganization();
             return $org
                 && $place->owner_id == $user->id
-                && $place->organization_id == $org->id;
+                && $place->floor?->building?->organization_id == $org->id;
         }
 
         if (is_null($place->owner_id) || optional($place->owner)->isOrganization() || $place->owner_id == $user->id) {
@@ -38,7 +38,6 @@ class PlacePolicy
         }
 
         return false;
-        // || ($place->owner && $place->owner->role == UserRoleEnum::ORGANIZATION->value);
     }
 
     /**
@@ -50,12 +49,8 @@ class PlacePolicy
             return false;
         }
 
-        if ($user->isOrganization()) {
-            $org = $user->organizationRoleOrganization();
-            return $org
-                && isset($data['organization_id'])
-                && $data['organization_id'] == $org->id;
-        }
+        // Removed direct organization_id check since places don't hold it anymore.
+        // It's inferred from the floor context in the controller.
         return true;
     }
     /**
@@ -71,7 +66,7 @@ class PlacePolicy
             $org = $user->organizationRoleOrganization();
             return $org
                 && $place->owner_id == $user->id
-                && $place->organization_id == $org->id;
+                && $place->floor?->building?->organization_id == $org->id;
         }
         // regular user can update only what they created
         return $place->owner_id == $user->id;

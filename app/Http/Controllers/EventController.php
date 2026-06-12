@@ -13,16 +13,18 @@ class EventController extends ApiController
     /**
      * Store an event associated with a trip, with deduplication.
      */
-    public function storeTripEvent(StoreEventRequest $request, $tripId): JsonResponse
+    public function storeTripEvent(StoreEventRequest $request): JsonResponse
     {
-        $trip = Trip::with('wheelchair')->findOrFail($tripId);
-        $this->authorize('update', $trip->wheelchair);
-
         $validated = $request->validated();
+
+        $wheelchair = $request->get('authenticated_wheelchair');
+        if (!$wheelchair) {
+            return $this->errorResponse('Unauthorized wheelchair.', 403);
+        }
 
         // Check for deduplication
         $existingEvent = Event::findDuplicate(
-            $trip->wheelchair_id,
+            $wheelchair->id,
             $validated['type'],
             $validated['severity'],
             $validated['event_source'] ?? 'ai'
@@ -37,8 +39,8 @@ class EventController extends ApiController
 
         // Otherwise create new event
         $event = Event::create([
-            'wheelchair_id' => $trip->wheelchair_id,
-            'trip_id' => $trip->id,
+            'wheelchair_id' => $wheelchair->id,
+            'trip_id' => $validated['trip_id'] ?? null,
             'type' => $validated['type'],
             'severity' => $validated['severity'],
             'message' => $validated['message'],
@@ -49,9 +51,10 @@ class EventController extends ApiController
         broadcast(new WheelchairEventOccurred($event));
 
         // Trigger Dashboard Broadcast
-        $targetUser = $trip->wheelchair->user;
-        $dashboardData = \App\Http\Controllers\DashboardController::getDashboardData($targetUser);
-        broadcast(new \App\Events\DashboardUpdated($targetUser->id, 'user_dashboard', $dashboardData));
+        if ($wheelchair->user) {
+            $dashboardData = \App\Http\Controllers\DashboardController::getDashboardData($wheelchair->user);
+            broadcast(new \App\Events\DashboardUpdated($wheelchair->user->id, 'user_dashboard', $dashboardData));
+        }
 
         return $this->successResponse('Event stored successfully.', parameters: ['data' => $event]);
     }

@@ -60,20 +60,16 @@ class Organization extends Model
         'categories.children',
         'categories.organizations',
         'categories.places',
-        'places',
-        'places.owner',
-        'places.categories',
-        'places.organization',
-        'places.reviews',
-        'places.favoritedBy',
         'country',
         'city',
         'reviews',
         'favoritedBy',
         'visitors',
         'comments',
-        'floors',
-        'floors.map',
+        'buildings.organization',
+        'buildings.floors',
+        'buildings.floors.map',
+        'buildings.floors.places',
     ];
 
     protected $appends = ['rating_distribution', 'top_reviews', 'is_favorite', 'top_visitors', 'visitorsCount', 'average_rating'];
@@ -169,10 +165,10 @@ class Organization extends Model
         );
     }
 
-    public function places(): HasMany
-    {
-        return $this->hasMany(Place::class);
-    }
+    // public function places(): HasMany
+    // {
+    //     return $this->hasMany(Place::class);
+    // }
 
     public function country(): BelongsTo
     {
@@ -236,5 +232,13 @@ class Organization extends Model
     public function floors(): HasMany
     {
         return $this->hasMany(Floor::class);
+    }
+
+    /**
+     * Get the buildings belonging to this organization.
+     */
+    public function buildings(): HasMany
+    {
+        return $this->hasMany(Building::class);
     }
 }

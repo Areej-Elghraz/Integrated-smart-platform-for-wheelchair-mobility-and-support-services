@@ -28,6 +28,13 @@ class CategoryResource extends JsonResource
             'children' => CategoryResource::collection($this->whenLoaded('children')),
             'organizations' => OrganizationResource::collection($this->whenLoaded('organizations')),
             'places' => PlaceResource::collection($this->whenLoaded('places')),
+            'owner' => $this->whenLoaded('owner', function () {
+                return [
+                    'id' => $this->owner->id,
+                    'name' => $this->owner->name,
+                    'email' => $this->owner->email,
+                ];
+            }),
         ];
     }
 }

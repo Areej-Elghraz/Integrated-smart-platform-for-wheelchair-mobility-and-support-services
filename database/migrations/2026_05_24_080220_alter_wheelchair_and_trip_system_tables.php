@@ -77,6 +77,24 @@ return new class extends Migration
         });
 
         // 2. Modify trips Table
+        if (!Schema::hasTable('trips')) {
+            Schema::create('trips', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('user_id')->nullable();
+                $table->unsignedBigInteger('e_chair_id')->nullable();
+                $table->string('start_location')->nullable();
+                $table->string('end_location')->nullable();
+                $table->string('navigation_mode')->nullable();
+                $table->timestamp('start_time')->nullable();
+                $table->timestamp('end_time')->nullable();
+                $table->double('total_distance')->nullable();
+                $table->double('total_time')->nullable();
+                $table->text('metadata')->nullable();
+                $table->string('status')->nullable();
+                $table->timestamps();
+            });
+        }
+
         Schema::table('trips', function (Blueprint $table) {
             if (DB::getDriverName() !== 'sqlite') {
                 $table->dropForeign(['user_id']);

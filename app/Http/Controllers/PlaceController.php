@@ -8,6 +8,7 @@ use App\Http\Requests\Place\StoreRequest;
 use App\Http\Requests\Place\UpdateRequest;
 use App\Http\Resources\PlaceResource;
 use App\Models\Place;
+use App\Models\Floor;
 use App\Models\User;
 use App\Services\InteractionService;
 use App\Services\PlaceService;
@@ -39,9 +40,7 @@ class PlaceController extends ApiController
                 'categories.children',
                 'categories.organizations',
                 'categories.places',
-                'organization',
-                'organization.categories',
-                'organization.places',
+                'floor.building.organization',
             ];
             if (in_array($relation, $access)) {
                 return [$relation => function ($q) use ($user) {
@@ -62,8 +61,57 @@ class PlaceController extends ApiController
         return $this->successResponse(
             message: __('messages.actions.retrieved_success', ['resource' => __('messages.resources.place.plural')]),
             status: 200,
-            parameters: $places
-            // parameters: PlaceResource::collection($places)->resolve()
+            parameters: PlaceResource::collection($places)->resolve()
+        );
+    }
+
+    /**
+     * List all places for a specific floor (Shallow Nesting: GET /floors/{floor}/places).
+     */
+    public function indexForFloor(Floor $floor, Request $request)
+    {
+        $this->authorize('view', $floor);
+
+        $with = $this->relationships($request->query('include', ''), auth('sanctum')->user());
+
+        $places = $floor->places()->with($with)->get();
+
+        return $this->successResponse(
+            message: __('messages.actions.retrieved_success', ['resource' => __('messages.resources.place.plural')]),
+            status: 200,
+            parameters: PlaceResource::collection($places)->resolve()
+        );
+    }
+
+    /**
+     * Create a place under a specific floor (Shallow Nesting: POST /floors/{floor}/places).
+     * The floor_id and map_id are inferred from the URL, no need to send them in body.
+     */
+    public function storeForFloor(Floor $floor, StoreRequest $request)
+    {
+        $this->authorize('update', $floor);
+
+        $with = $this->relationships($request->query('include', ''), auth('sanctum')->user());
+
+        $path = null;
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('places', 'public');
+        }
+
+        // Merge floor_id and map_id from the URL context
+        $data = $request->validated();
+        $data['floor_id'] = $floor->id;
+        if ($floor->map) {
+            $data['map_id'] = $floor->map->id;
+        }
+
+        $place = $this->placeService->createPlace(auth('sanctum')->user(), $data, $path, $with);
+        $place->load('floor');
+
+        return $this->successResponse(
+            message: __('messages.actions.created_success', ['resource' => __('messages.resources.place.singular')]),
+            status: 201,
+            parameters: (new PlaceResource($place))->resolve()
         );
     }
 
@@ -78,8 +126,7 @@ class PlaceController extends ApiController
         return $this->successResponse(
             message: __('messages.actions.retrieved_success', ['resource' => __('messages.resources.place.singular')]),
             status: 200,
-            parameters: $place->toArray()
-            // parameters: (new PlaceResource($place))->resolve()
+            parameters: (new PlaceResource($place))->resolve()
         );
     }
 
@@ -98,8 +145,7 @@ class PlaceController extends ApiController
         return $this->successResponse(
             message: __('messages.actions.created_success', ['resource' => __('messages.resources.place.singular')]),
             status: 201,
-            parameters: $place
-            // parameters: (new PlaceResource($place))->resolve()
+            parameters: (new PlaceResource($place))->resolve()
         );
     }
 
@@ -122,8 +168,7 @@ class PlaceController extends ApiController
         return $this->successResponse(
             message: __('messages.actions.updated_success', ['resource' => __('messages.resources.place.singular')]),
             status: 200,
-            parameters: $place
-            // parameters: (new PlaceResource($place))->resolve()
+            parameters: (new PlaceResource($place))->resolve()
         );
     }
 

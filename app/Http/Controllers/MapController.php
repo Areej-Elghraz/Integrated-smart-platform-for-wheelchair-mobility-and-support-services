@@ -39,37 +39,27 @@ class MapController extends ApiController
         $yamlFile = $request->file('yaml_file');
         $yamlPath = null;
         $yamlData = null;
-        $resolution = $request->input('resolution', 0.05);
-        $origin = $request->input('origin');
-        $mode = null;
-        $negate = null;
-        $occupied_thresh = null;
-        $free_thresh = null;
+        // $resolution = $request->input('resolution', 0.05);
+        // $origin = $request->input('origin');
+        // $mode = null;
+        // $negate = null;
+        // $occupied_thresh = null;
+        // $free_thresh = null;
 
         if ($yamlFile) {
             $yamlPath = $yamlFile->store('maps', 'public');
             try {
                 $yamlData = \Symfony\Component\Yaml\Yaml::parseFile($yamlFile->getRealPath());
-                if (isset($yamlData['resolution'])) {
-                    $resolution = $yamlData['resolution'];
-                }
-                if (isset($yamlData['origin'])) {
-                    $origin = $yamlData['origin'];
-                }
-                if (isset($yamlData['mode'])) {
-                    $mode = $yamlData['mode'];
-                }
-                if (isset($yamlData['negate'])) {
-                    $negate = $yamlData['negate'];
-                }
-                if (isset($yamlData['occupied_thresh'])) {
-                    $occupied_thresh = $yamlData['occupied_thresh'];
-                }
-                if (isset($yamlData['free_thresh'])) {
-                    $free_thresh = $yamlData['free_thresh'];
-                }
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\Log::error('Error parsing YAML map file: ' . $e->getMessage());
+            }
+        }
+
+        // Merge inputs into yamlData if they are provided in the request
+        $rosFields = ['resolution', 'origin', 'mode', 'negate', 'occupied_thresh', 'free_thresh'];
+        foreach ($rosFields as $field) {
+            if ($request->has($field)) {
+                $yamlData[$field] = $request->input($field);
             }
         }
 
@@ -108,12 +98,6 @@ class MapController extends ApiController
             'extension'       => $extension,
             'width'           => $width ?: 0,
             'height'          => $height ?: 0,
-            'resolution'      => $resolution,
-            'origin'          => $origin,
-            'mode'            => $mode,
-            'negate'          => $negate,
-            'occupied_thresh' => $occupied_thresh,
-            'free_thresh'     => $free_thresh,
         ];
 
         if ($existingMap) {
@@ -148,7 +132,7 @@ class MapController extends ApiController
         return $this->successResponse(
             message: __('messages.actions.retrieved_success', ['resource' => __('messages.resources.map.singular')]),
             status: 200,
-            parameters: $map->toArray()
+            parameters: $map->loadMissing(['floor.places'])->toArray()
         );
     }
 

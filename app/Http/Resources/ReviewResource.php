@@ -27,6 +27,7 @@ class ReviewResource extends JsonResource
                 'name' => $this->user->name ?? null,
                 'image' => $this->user->image ?? null,
             ],
+            'place' => new PlaceResource($this->whenLoaded('place')),
         ];
     }
 }

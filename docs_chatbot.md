@@ -50,49 +50,49 @@
 
 ```json
 {
-    "user_text": "انا حاسس بتعب ومش عارف اروح فين",
+    "user_text": "انا حاسس بتعب ومش عارف اروح فين", // (example: String)
     "context": {
         "user_profile": {
-            "name": "Ahmed",
-            "medical_condition": "Lower Body Paralysis / Amputation",
-            "age": 28,
-            "weight": 70,
-            "gender": "male"
+            "name": "Ahmed", // (example: String)
+            "medical_condition": "Lower Body Paralysis / Amputation", // (example: String)
+            "age": 28, // (example: Integer)
+            "weight": 70, // (example: Integer)
+            "gender": "male" // (options: "male", "female")
         },
         "relations": {
             "doctor": {
-                "name": "Dr. Smith",
-                "phone": "+201111111"
+                "name": "Dr. Smith", // (example: String)
+                "phone": "+201111111" // (example: String)
             },
-            "companions": [{ "name": "Mona", "phone": "+201222222" }]
+            "companions": [{ "name": "Mona", "phone": "+201222222" }] // Array of objects
         },
         "wheelchair_status": {
-            "serial_number": "CHAIR-001",
-            "battery": 80,
-            "connection": "online"
+            "serial_number": "CHAIR-001", // (example: String)
+            "battery": 80, // (example: Integer 0-100)
+            "connection": "online" // (options: "online", "offline")
         },
         "current_health_state": {
-            "heart_rate": 110,
-            "temperature": 37.5,
+            "heart_rate": 110, // (example: Integer, normally 60-100)
+            "temperature": 37.5, // (example: Float, normally 36.5-37.5)
             "mpu_monitoring": {
-                "angle": 45,
-                "fall_detected": true,
-                "fainting_risk": "high"
+                "angle": 45, // (example: Float, representing tilt)
+                "fall_detected": true, // (options: true, false)
+                "fainting_risk": "high" // (options: "normal", "medium", "critical")
             }
         },
         "current_trip": {
-            "is_active": true,
-            "start_location": "Home",
-            "destination": "Hospital",
-            "current_coordinates": { "x": 10.5, "y": 20.2 }
+            "is_active": true, // (options: true, false)
+            "start_location": "Home", // (example: String)
+            "destination": "Hospital", // (example: String)
+            "current_coordinates": { "x": 10.5, "y": 20.2 } // (example: Floats)
         },
         "latest_alerts": {
             "heart": {
-                "message": "High Heart Rate Detected",
-                "severity": "critical",
-                "timestamp": "2026-05-28T13:10:00Z"
+                "message": "High Heart Rate Detected", // (example: String)
+                "severity": "critical", // (options: "normal", "medium", "critical")
+                "timestamp": "2026-05-28T13:10:00Z" // (example: ISO-8601 Date String)
             },
-            "temperature": null,
+            "temperature": null, // (options: Object or null if no alert)
             "mpu_monitoring": {
                 "message": "High Fall Risk",
                 "severity": "critical",
@@ -116,16 +116,23 @@
 
 #### Response (200 OK)
 
-يقوم الـ Python script باكتشاف اللغة عبر `fastText`، ثم يرد بالعربي:
+يقوم لارافل بإرجاع الرد النهائي لـ Flutter بناءً على استجابة الـ AI كالتالي:
 
 ```json
 {
-    "message": "Chatbot response generated successfully.",
-    "data": {
-        "reply": "سلامتك يا أحمد. ألاحظ أن نبضات قلبك مرتفعة قليلاً. هل تحب أن أرسل رسالة استغاثة (SOS) للمرافق الخاص بك؟",
-        "language_detected": "ar",
-        "intent": "health_complaint"
-    }
+    "user_message": {
+        "id": 1,
+        "sender_type": "user",
+        "content": "انا حاسس بتعب ومش عارف اروح فين"
+    },
+    "bot_message": {
+        "id": 2,
+        "sender_type": "bot",
+        "content": "سلامتك يا أحمد. ألاحظ أن نبضات قلبك مرتفعة قليلاً. هل تحب أن أرسل رسالة استغاثة (SOS) للمرافق الخاص بك؟"
+    },
+    "intent": "health_complaint", // (options: "greeting", "health_complaint", "navigation", "emergency", "general")
+    "confidence": 0.98, // (example: Float 0.0 to 1.0)
+    "language": "ar" // (options: "ar", "en")
 }
 ```
 

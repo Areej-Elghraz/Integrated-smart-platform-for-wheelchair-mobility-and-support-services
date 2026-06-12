@@ -40,7 +40,7 @@ class MessageController extends ApiController
     public function showSession(Request $request, ChatSession $session)
     {
         if ($session->user_id !== $request->user()->id) {
-            throw new \Exception(__('messages.unauthorized'), 403);
+            return response()->json(['error' => __('messages.unauthorized')], 403);
         }
 
         $session->load('messages');
@@ -50,7 +50,7 @@ class MessageController extends ApiController
     public function destroySession(Request $request, ChatSession $session)
     {
         if ($session->user_id !== $request->user()->id) {
-            throw new \Exception(__('messages.unauthorized'), 403);
+            return response()->json(['error' => __('messages.unauthorized')], 403);
         }
 
         $session->delete();
@@ -61,7 +61,7 @@ class MessageController extends ApiController
     public function chat(Request $request, ChatSession $session)
     {
         if ($session->user_id !== $request->user()->id) {
-            throw new \Exception(__('messages.unauthorized'), 403);
+            return response()->json(['error' => __('messages.unauthorized')], 403);
         }
 
         $request->validate([
@@ -73,12 +73,8 @@ class MessageController extends ApiController
         $content = $request->input('message');
         $mediaFiles = $request->file('media');
 
-        // if (!$content && empty($mediaFiles)) {
-        //     return response()->json(['error' => __('messages.message_media_required')], 400);
-        // }
-
-        if (!$content) {
-            throw new \Exception(__('messages.message_media_required'), 400);
+        if (!$content && empty($mediaFiles)) {
+            return response()->json(['error' => __('messages.message_media_required')], 400);
         }
 
         $attachments = [];
@@ -191,58 +187,22 @@ class MessageController extends ApiController
         $topP = $request->input('top_p', 0.95);
 
         try {
-            $postResponse = Http::timeout(30)->post('https://sarasalem-me-app.hf.space/gradio_api/call/chat', [
-                'data' => [
-                    (string) $textToSend,
-                    (string) $systemMessage,
-                    (int) $maxTokens,
-                    (float) $temperature,
-                    (float) $topP,
+            $postResponse = Http::timeout(30)->post('https://chairpal-ai.duckdns.org/chat', [
+                'message' => [
+                    'text' => $textToSend
                 ],
+                'system_message' => (string) $systemMessage,
+                'max_tokens' => (int) $maxTokens,
+                'temperature' => (float) $temperature,
+                'top_p' => (float) $topP,
             ]);
 
             if ($postResponse->failed()) {
-                throw new \Exception("Failed to initiate chat (POST).");
+                return response()->json(['error' => "Failed to initiate chat (POST). Response: " . $postResponse->body()], 500);
             }
 
-            $eventId = $postResponse->json('event_id');
-
-            if (!$eventId) {
-                throw new \Exception("Did not receive Event ID from Hugging Face.");
-            }
-
-            // الخطوة 2: عمل GET للحصول على النتيجة النهائية
-            // ملاحظة: الرد بيرجع كـ Stream، فهنقرأه كـ نص وننظفه
-            $getResult = Http::timeout(60)->get("https://sarasalem-me-app.hf.space/gradio_api/call/chat/$eventId");
-
-            if ($getResult->failed()) {
-                throw new \Exception("Failed to fetch bot response (GET).");
-            }
-
-            $rawResponse = $getResult->body();
-
-            // تنظيف الرد: Gradio بيرجع بيانات فيها كلمة "data:" و "event: complete"
-            // هنستخدم Regex عشان نطلع النص اللي إحنا عايزينه بس
-            // بنحاول نلاقي أول صف فيه بيانات الرد
-            $lines = explode("\n", $rawResponse);
-            $finalText = "";
-
-            foreach ($lines as $line) {
-                if (str_starts_with($line, 'data: ')) {
-                    $dataJson = substr($line, 6); // نشيل كلمة "data: "
-                    $dataArray = json_decode($dataJson, true);
-
-                    // الـ Gradio 4 بيرجع النتيجة في Array
-                    if (is_array($dataArray) && isset($dataArray[0])) {
-                        $finalText = $dataArray[0];
-                        break; // خدنا أول رد كامل
-                    }
-                }
-            }
-
-            // معالجة الـ ASS Tags لو لسه موجودة
-            preg_match('/\[ASS\](.*?)\[\/ASS\]/s', $finalText, $matches);
-            $botFinalResponse = isset($matches[1]) ? trim($matches[1]) : trim($finalText ?: $rawResponse);
+            $responseData = $postResponse->json();
+            $botFinalResponse = $responseData['response'] ?? 'Sorry, I did not understand that.';
 
             // 3. حفظ رد البوت في قاعدة البيانات
             $botMessage = $session->messages()->create([
@@ -252,10 +212,13 @@ class MessageController extends ApiController
 
             return response()->json([
                 'user_message' => $userMessage,
-                'bot_message' => $botMessage
+                'bot_message' => $botMessage,
+                'intent' => $responseData['intent'] ?? null,
+                'confidence' => $responseData['confidence'] ?? null,
+                'language' => $responseData['language'] ?? null,
             ]);
         } catch (\Exception $e) {
-            throw new \Exception(__('messages.bot_service_unavailable') . " " . $e->getMessage(), 500);
+            return response()->json(['error' => __('messages.bot_service_unavailable') . " " . $e->getMessage()], 500);
         }
         // try {
         //     $response = Http::post('https://sarasalem-me-app.hf.space/api/predict', [
@@ -304,7 +267,7 @@ class MessageController extends ApiController
 
         // Ensure the message belongs to a session owned by the authenticated user
         if ($message->session->user_id !== $request->user()->id) {
-            throw new \Exception(__('messages.unauthorized'), 403);
+            return response()->json(['error' => __('messages.unauthorized')], 403);
         }
 
         // Usually users react to bot messages, but let's allow it for any message in their session

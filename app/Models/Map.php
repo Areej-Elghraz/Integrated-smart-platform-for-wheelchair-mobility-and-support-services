@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Map extends Model
 {
@@ -18,23 +19,12 @@ class Map extends Model
         'extension',
         'width',
         'height',
-        'origin',
-        'resolution',
-        'mode',
-        'negate',
-        'occupied_thresh',
-        'free_thresh',
     ];
 
     protected $casts = [
-        'origin' => 'array',
         'yaml_data' => 'array',
         'width' => 'double',
         'height' => 'double',
-        'resolution' => 'double',
-        'occupied_thresh' => 'double',
-        'free_thresh' => 'double',
-        'negate' => 'integer',
     ];
 
     /**
@@ -43,6 +33,14 @@ class Map extends Model
     public function floor(): BelongsTo
     {
         return $this->belongsTo(Floor::class);
+    }
+
+    /**
+     * Get the places that owns the map.
+     */
+    public function places(): HasMany
+    {
+        return $this->hasMany(place::class);
     }
 
     /**

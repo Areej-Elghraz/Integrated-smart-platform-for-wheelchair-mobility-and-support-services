@@ -21,7 +21,7 @@ class PlaceService
     /**
      * Create a new place.
      */
-    public function createPlace(?User $user, array $data, ?string $imagePath = null, array $with = []): array
+    public function createPlace(?User $user, array $data, ?string $imagePath = null, array $with = []): Place
     {
         $categoryId = null;
         if (isset($data['category_id'])) {
@@ -34,7 +34,6 @@ class PlaceService
             $category = $this->categoryService->createCategory($user, [
                 'name' => $data['category_name'],
                 'parent_id' => null,
-                'organization_id' => $data['organization_id'] ?? null,
                 'owner_id' => $ownerId,
             ], [], $imagePath);
             $categoryId = $category['id'];
@@ -77,14 +76,14 @@ class PlaceService
 
             $this->clearCache($user);
 
-            return $place->load($with)->toArray();
+            return $place->load($with);
         });
     }
 
     /**
      * Update a place.
      */
-    public function updatePlace(User $user, Place $place, array $data, ?string $imagePath = null, array $with = []): array
+    public function updatePlace(User $user, Place $place, array $data, ?string $imagePath = null, array $with = []): Place
     {
         $categoryId = null;
         if (isset($data['category_id'])) {
@@ -137,7 +136,7 @@ class PlaceService
             }
 
             $this->clearCache($user);
-            return $place->load($with)->toArray();
+            return $place->load($with);
         });
     }
 
@@ -156,7 +155,7 @@ class PlaceService
     /**
      * Get places visible to the user.
      */
-    public function getVisiblePlaces(User $user, array $filters = [], array $with = []): array
+    public function getVisiblePlaces(User $user, array $filters = [], array $with = [])
     {
         $cacheKey = 'places_' . $user->id . '_' . md5(json_encode([
             'filters' => $filters,
@@ -194,7 +193,7 @@ class PlaceService
                 ->when(
                     $filters['organization_id'] ?? null,
                     fn($q, $orgId) =>
-                    $q->where('organization_id', $orgId)
+                    $q->whereHas('floor.building', fn($b) => $b->where('organization_id', $orgId))
                 )
                 ->when(
                     $filters['category_id'] ?? null,
@@ -249,7 +248,7 @@ class PlaceService
             if (!empty($filters['limit'])) {
                 $query->limit($filters['limit']);
             }
-            return $query->search($filters['search'] ?? null)->get()->toArray();
+            return $query->search($filters['search'] ?? null)->get();
         });
     }
 
@@ -264,7 +263,7 @@ class PlaceService
     /**
      * Get user's favorite places.
      */
-    public function getFavorites(User $user, array $filters = [], array $with = []): array
+    public function getFavorites(User $user, array $filters = [], array $with = [])
     {
         $cacheKey = 'favorites_' . $user->id . '_' . md5(json_encode([
             'filters' => $filters,
@@ -285,7 +284,7 @@ class PlaceService
                 $query->limit($filters['limit']);
             }
 
-            return $query->get()->toArray();
+            return $query->get();
         });
     }
 

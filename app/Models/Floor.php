@@ -15,24 +15,24 @@ class Floor extends Model
     protected $fillable = [
         'name',
         'number',
-        'organization_id',
-        'place_id',
+        'building_id',
+    ];
+
+    protected $with = ['building'];
+
+    public const ALLOWED_RELATIONS = [
+        'building',
+        'building.organization',
+        'map',
+        'places',
     ];
 
     /**
-     * Get the organization that owns the floor.
+     * Get the building that contains this floor.
      */
-    public function organization(): BelongsTo
+    public function building(): BelongsTo
     {
-        return $this->belongsTo(Organization::class);
-    }
-
-    /**
-     * Get the place (building) that contains this floor.
-     */
-    public function place(): BelongsTo
-    {
-        return $this->belongsTo(Place::class);
+        return $this->belongsTo(Building::class);
     }
 
     /**

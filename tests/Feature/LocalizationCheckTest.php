@@ -48,12 +48,11 @@ class LocalizationCheckTest extends TestCase
         $place = \App\Models\Place::create([
             'name' => 'Descriptive Place',
             'description' => 'This is a test description for the place.',
-            'category_id' => $category->id,
-            'organization_id' => $organization->id,
             'owner_id' => $user->id,
             'x' => 0,
             'y' => 0
         ]);
+        $place->categories()->attach($category->id);
 
         $user->favorites()->attach($place->id);
 

@@ -16,6 +16,7 @@ use App\Http\Controllers\Auth\VerifyOtpController;
 use App\Http\Controllers\Profile\ChangePasswordController;
 use App\Http\Controllers\Profile\UpdateDataController;
 use App\Http\Controllers\ChatBot\MessageController;
+use App\Http\Controllers\BuildingController;
 use App\Enums\TokenAbilityEnum;
 use Illuminate\Support\Facades\Route;
 
@@ -52,20 +53,25 @@ Route::middleware(['auth:sanctum', 'ability:' . TokenAbilityEnum::ACCESS_TOKEN->
   Route::post('/organizations/{organization}/favorite', [\App\Http\Controllers\FavoriteController::class, 'toggleOrganization'])->name('organizations.favorites.toggle');
   Route::post('/organizations/{organization}/visit', [\App\Http\Controllers\OrganizationController::class, 'visit'])->name('organizations.visit');
 
-  // Places
-  Route::apiResource('places', \App\Http\Controllers\PlaceController::class);
+  // Places - Nested under Floor for list & create, direct ID for show/update/delete
+  Route::get('/floors/{floor}/places', [\App\Http\Controllers\PlaceController::class, 'indexForFloor'])->name('floors.places.index');
+  Route::post('/floors/{floor}/places', [\App\Http\Controllers\PlaceController::class, 'storeForFloor'])->name('floors.places.store');
+  Route::apiResource('places', \App\Http\Controllers\PlaceController::class)->only(['show', 'update', 'destroy']);
   Route::post('/places/{place}/reviews', [\App\Http\Controllers\ReviewController::class, 'store'])->name('reviews.store');
   Route::post('/places/{place}/favorite', [\App\Http\Controllers\FavoriteController::class, 'toggle'])->name('favorites.toggle');
   Route::post('/places/{place}/visit', [\App\Http\Controllers\PlaceController::class, 'visit'])->name('places.visit');
 
-  // Floors & Maps
-  Route::get('/organizations/{organization}/floors', [\App\Http\Controllers\FloorController::class, 'indexForOrganization'])->name('organizations.floors.index');
-  Route::post('/organizations/{organization}/floors', [\App\Http\Controllers\FloorController::class, 'storeForOrganization'])->name('organizations.floors.store');
-  Route::get('/places/{place}/floors', [\App\Http\Controllers\FloorController::class, 'indexForPlace'])->name('places.floors.index');
-  Route::post('/places/{place}/floors', [\App\Http\Controllers\FloorController::class, 'storeForPlace'])->name('places.floors.store');
+  // Buildings - Nested under Organization for list & create, direct ID for show/update/delete
+  Route::get('/organizations/{organization}/buildings', [BuildingController::class, 'indexForOrganization'])->name('organizations.buildings.index');
+  Route::post('/organizations/{organization}/buildings', [BuildingController::class, 'storeForOrganization'])->name('organizations.buildings.store');
+  Route::apiResource('buildings', BuildingController::class)->only(['show', 'update', 'destroy']);
 
+  // Floors - Nested under Building for list & create, direct ID for show/update/delete
+  Route::get('/buildings/{building}/floors', [\App\Http\Controllers\FloorController::class, 'indexForBuilding'])->name('buildings.floors.index');
+  Route::post('/buildings/{building}/floors', [\App\Http\Controllers\FloorController::class, 'storeForBuilding'])->name('buildings.floors.store');
   Route::apiResource('floors', \App\Http\Controllers\FloorController::class)->only(['show', 'update', 'destroy']);
 
+  // Maps - Nested under Floor (one-to-one)
   Route::post('/floors/{floor}/map', [\App\Http\Controllers\MapController::class, 'store'])->name('floors.map.store');
   Route::get('/floors/{floor}/map', [\App\Http\Controllers\MapController::class, 'show'])->name('floors.map.show');
   Route::delete('/floors/{floor}/map', [\App\Http\Controllers\MapController::class, 'destroy'])->name('floors.map.destroy');
@@ -87,7 +93,6 @@ Route::middleware(['auth:sanctum', 'ability:' . TokenAbilityEnum::ACCESS_TOKEN->
   Route::post('/wheelchairs/{wheelchairId}/unassign', [\App\Http\Controllers\WheelchairController::class, 'unassign'])->name('wheelchairs.unassign');
 
   Route::get('/wheelchairs/{wheelchairId}/vitals', [\App\Http\Controllers\WheelchairController::class, 'showVitals'])->name('wheelchairs.show_vitals');
-  Route::post('/wheelchairs/{wheelchairId}/vitals', [\App\Http\Controllers\WheelchairController::class, 'updateCurrentVitalState'])->name('wheelchairs.update_vitals');
 
   Route::get('/wheelchairs/{wheelchairId}/sensor-readings', [\App\Http\Controllers\SensorReadingController::class, 'index'])->name('sensor_readings.index');
   Route::post('/wheelchairs/{wheelchairId}/sensor-readings', [\App\Http\Controllers\SensorReadingController::class, 'store'])->name('sensor_readings.store');
@@ -134,12 +139,10 @@ Route::middleware(['auth:sanctum', 'ability:' . TokenAbilityEnum::ACCESS_TOKEN->
   Route::post('/chatbot/sessions/{session}/chat', [\App\Http\Controllers\ChatBot\MessageController::class, 'chat'])->name('chatbot.chat');
   Route::post('/chatbot/messages/{message}/reaction', [\App\Http\Controllers\ChatBot\MessageController::class, 'reactToMessage'])->name('chatbot.messages.reaction');
 
-  // Trips & Events
   Route::post('/wheelchairs/{wheelchairId}/trips', [\App\Http\Controllers\TripController::class, 'startTrip'])->name('trips.start');
   Route::get('/trips/{tripId}/movement-states', [\App\Http\Controllers\TripController::class, 'movementStates'])->name('trips.movement_states_get');
-  Route::post('/trips/{tripId}/movement-states', [\App\Http\Controllers\TripController::class, 'updateMovementStatus'])->name('trips.update_movement');
   Route::post('/trips/{tripId}/end', [\App\Http\Controllers\TripController::class, 'endTrip'])->name('trips.end');
-  Route::post('/trips/{tripId}/events', [\App\Http\Controllers\EventController::class, 'storeTripEvent'])->name('trips.store_event');
+
   // Dashboards
   Route::get('/dashboard/user', [\App\Http\Controllers\DashboardController::class, 'userDashboard'])->name('dashboard.user');
   Route::get('/dashboard/companion', [\App\Http\Controllers\DashboardController::class, 'companionDashboard'])->name('dashboard.companion');
@@ -147,4 +150,11 @@ Route::middleware(['auth:sanctum', 'ability:' . TokenAbilityEnum::ACCESS_TOKEN->
 
   // Live Locations
   Route::post('/location/user', [\App\Http\Controllers\LocationController::class, 'userLocation'])->name('location.user');
+});
+
+// IoT Routes (Hardware/Wheelchair)
+Route::middleware(['verify_wheelchair_api_key'])->group(function () {
+    Route::post('/trip/movement/update', [\App\Http\Controllers\TripController::class, 'updateMovementStatus'])->name('iot.trip.movement.update');
+    Route::post('/trip/events', [\App\Http\Controllers\EventController::class, 'storeTripEvent'])->name('iot.trip.events.store');
+    Route::post('/wheelchair/health', [\App\Http\Controllers\WheelchairController::class, 'updateCurrentVitalState'])->name('iot.wheelchair.health.update');
 });

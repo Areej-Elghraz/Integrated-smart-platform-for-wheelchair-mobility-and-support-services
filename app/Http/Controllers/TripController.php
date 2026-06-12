@@ -77,18 +77,15 @@ class TripController extends ApiController
         return $this->successResponse('Movement state retrieved.', parameters: ['data' => $trip->movementState]);
     }
 
-    /**
-     * Update movement status of a trip.
-     */
-    public function updateMovementStatus(Request $request, $tripId): JsonResponse
+    public function updateMovementStatus(Request $request): JsonResponse
     {
-        $trip = Trip::with('wheelchair')->findOrFail($tripId);
-        $this->authorize('update', $trip->wheelchair);
-
         $validated = $request->validate([
+            'trip_id' => 'nullable|exists:trips,id',
             'movement_status' => 'required|string|in:moving,idle',
             'speed' => 'required|numeric',
             'position' => 'required|array',
+            'position.x' => 'required|numeric',
+            'position.y' => 'required|numeric',
             'theta' => 'required|numeric',
             'mode' => 'required|string|in:autonomous,manual',
             'risk_level' => 'required|string|in:low,medium,high',
@@ -96,15 +93,40 @@ class TripController extends ApiController
             'obstacle_distance' => 'required|numeric',
         ]);
 
-        $movementState = $trip->movementState()->updateOrCreate(
-            ['trip_id' => $trip->id],
-            $validated
-        );
+        $wheelchair = $request->get('authenticated_wheelchair');
+        if (!$wheelchair) {
+            return $this->errorResponse('Unauthorized wheelchair.', 403);
+        }
 
-        $movementState->load('trip.wheelchair');
+        // 1. Update wheelchair coordinates
+        $wheelchair->update([
+            'x_coordinate' => $validated['position']['x'],
+            'y_coordinate' => $validated['position']['y'],
+            'theta' => $validated['theta'],
+        ]);
 
-        broadcast(new TripMovementStatusUpdated($movementState));
+        // Broadcast to UI
+        broadcast(new \App\Events\WheelchairUpdated($wheelchair));
 
-        return $this->successResponse('Trip movement state updated successfully.', parameters: ['data' => $movementState]);
+        // 2. Update trip if exists
+        $movementState = null;
+        if (!empty($validated['trip_id'])) {
+            $trip = Trip::find($validated['trip_id']);
+            if ($trip && $trip->wheelchair_id == $wheelchair->id) {
+                $movementState = $trip->movementState()->updateOrCreate(
+                    ['trip_id' => $trip->id],
+                    \Illuminate\Support\Arr::except($validated, ['trip_id'])
+                );
+                $movementState->load('trip.wheelchair');
+                broadcast(new TripMovementStatusUpdated($movementState));
+            }
+        }
+
+        return $this->successResponse('Trip movement state updated successfully.', parameters: [
+            'data' => [
+                'wheelchair' => $wheelchair,
+                'movement_state' => $movementState
+            ]
+        ]);
     }
 }

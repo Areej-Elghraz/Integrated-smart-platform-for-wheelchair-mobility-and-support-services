@@ -15,21 +15,16 @@ class Wheelchair extends Model
     protected $fillable = [
         'user_id',
         'serial_number',
-        'battery',
-        'voltage',
-        'current',
-        'temperature',
+        'api_key',
         'connection_state',
         'x_coordinate',
         'y_coordinate',
+        'theta',
     ];
 
     protected $casts = [
-        'battery' => 'double',
-        'voltage' => 'double',
-        'current' => 'double',
-        'temperature' => 'double',
         'connection_state' => 'string',
+        'theta' => 'double',
     ];
 
     public function user(): BelongsTo

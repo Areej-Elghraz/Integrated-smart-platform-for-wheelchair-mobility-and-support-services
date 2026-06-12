@@ -61,11 +61,14 @@ class FavoriteController extends ApiController
         $with = $this->relationships($request->query('include', ''), Auth::user());
 
         $favorites = $this->placeService->getFavorites(Auth::user(), $request->validated(), $with);
+        $parameters = $favorites instanceof \Illuminate\Database\Eloquent\Collection
+            ? $favorites->toArray()
+            : (is_array($favorites) ? $favorites : []);
 
         return $this->successResponse(
             message: __('messages.actions.retrieved_success', ['resource' => __('messages.resources.place.plural')]),
             status: 200,
-            parameters: $favorites
+            parameters: $parameters
         );
     }
 

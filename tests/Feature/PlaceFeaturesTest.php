@@ -39,9 +39,8 @@ class PlaceFeaturesTest extends TestCase
             'name' => 'Test Place',
             'x' => 10,
             'y' => 10,
-            'category_id' => $category->id,
-            'organization_id' => $organization->id,
         ]);
+        $place->categories()->attach($category->id);
 
         $response = $this->postJson("/api/places/{$place->id}/reviews", [
             'rating' => 5,
@@ -67,8 +66,7 @@ class PlaceFeaturesTest extends TestCase
 
         $place = Place::create([
             'name' => 'Rated Place',
-            'category_id' => $category->id,
-            'organization_id' => $organization->id,
+            'owner_id' => $user->id,
         ]);
         
         // Create reviews
@@ -93,9 +91,8 @@ class PlaceFeaturesTest extends TestCase
 
         $place = Place::create([
             'name' => 'Fav Place',
-            'category_id' => $category->id,
-            'organization_id' => $organization->id,
         ]);
+        $place->categories()->attach($category->id);
 
         // Toggle On
         $response = $this->postJson("/api/places/{$place->id}/favorite", [], $headers);
@@ -127,9 +124,8 @@ class PlaceFeaturesTest extends TestCase
 
         $place = Place::create([
             'name' => 'Place',
-            'category_id' => $category->id,
-            'organization_id' => $organization->id,
         ]);
+        $place->categories()->attach($category->id);
         $review = $place->reviews()->create(['user_id' => $user->id, 'rating' => 4]);
 
         $response = $this->deleteJson("/api/reviews/{$review->id}", [], $headers);
@@ -146,9 +142,8 @@ class PlaceFeaturesTest extends TestCase
         $otherUser = User::factory()->create();
         $place = Place::create([
             'name' => 'Place',
-            'category_id' => $category->id,
-            'organization_id' => $organization->id,
         ]);
+        $place->categories()->attach($category->id);
         $review = $place->reviews()->create(['user_id' => $otherUser->id, 'rating' => 4]);
 
         $response = $this->deleteJson("/api/reviews/{$review->id}", [], $headers);

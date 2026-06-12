@@ -1,17 +1,17 @@
 ## Floors & Maps Endpoints
 
-### 1. List Floors of an Organization
+### 1. List Floors of a Building
 
 #### Endpoint Information
 
 - **HTTP Method:** `GET`
-- **Full URL:** `/api/organizations/{organization}/floors`
-- **Description:** Returns a list of floors belonging to a specific organization.
-- **Allowed Roles:** Authenticated user who has view permission on the organization. Note: Users with the `doctor` role are explicitly blocked from viewing or managing floors, maps, and places by the strict system policies.
+- **Full URL:** `/api/buildings/{building}/floors`
+- **Description:** Returns a list of floors belonging to a specific building.
+- **Allowed Roles:** Authenticated user who has view permission on the parent organization/building. Note: Users with the `doctor` role are explicitly blocked from viewing or managing floors, maps, and places by the strict system policies.
 
 #### Query Parameters
 
-- `include` (string, optional): Related resources to eager-load (e.g. `map`, `places`, `organization`).
+- `include` (string, optional): Related resources to eager-load (e.g. `map`, `places`).
 
 #### Responses
 
@@ -23,8 +23,7 @@
     "data": [
         {
             "id": 1,
-            "organization_id": 1,
-            "place_id": null,
+            "building_id": 1,
             "name": "Ground Floor",
             "number": 1,
             "created_at": "2026-05-20T14:58:20+03:00",
@@ -36,14 +35,14 @@
 
 ---
 
-### 2. Create Floor for an Organization
+### 2. Create Floor for a Building
 
 #### Endpoint Information
 
 - **HTTP Method:** `POST`
-- **Full URL:** `/api/organizations/{organization}/floors`
-- **Description:** Creates a new floor under an organization.
-- **Allowed Roles:** Organization owner.
+- **Full URL:** `/api/buildings/{building}/floors`
+- **Description:** Creates a new floor under a building.
+- **Allowed Roles:** Building owner (owner of the organization).
 
 #### Request Body
 
@@ -57,91 +56,6 @@
 **Fields:**
 
 - `name` (string, required): The name of the floor (e.g., "Ground Floor").
-- `number` (integer, required): The floor number (e.g., `1`, `2`, `-1` for basement).
-
-#### Validation Rules
-
-- `name`: `required|string|max:255`
-- `number`: `required|integer`
-
-#### Responses
-
-**Success (201 Created):**
-
-```json
-{
-    "message": "Floor created successfully!",
-    "data": {
-        "id": 1,
-        "organization_id": 1,
-        "place_id": null,
-        "name": "Floor 1",
-        "number": 1,
-        "created_at": "2026-05-20T14:58:20+03:00",
-        "updated_at": "2026-05-20T14:58:20+03:00"
-    }
-}
-```
-
----
-
-### 3. List Floors of a Place
-
-#### Endpoint Information
-
-- **HTTP Method:** `GET`
-- **Full URL:** `/api/places/{place}/floors`
-- **Description:** Returns a list of sub-floors inside a specific place.
-- **Allowed Roles:** Authenticated user who has view permission on the place.
-
-#### Query Parameters
-
-- `include` (string, optional): Related resources to eager-load (e.g. `map`, `places`, `place`).
-
-#### Responses
-
-**Success (200 OK):**
-
-```json
-{
-    "message": "Floors retrieved successfully!",
-    "data": [
-        {
-            "id": 2,
-            "organization_id": null,
-            "place_id": 1,
-            "name": "First Sub-floor",
-            "number": 2,
-            "created_at": "2026-05-20T14:58:20+03:00",
-            "updated_at": "2026-05-20T14:58:20+03:00"
-        }
-    ]
-}
-```
-
----
-
-### 4. Create Floor for a Place
-
-#### Endpoint Information
-
-- **HTTP Method:** `POST`
-- **Full URL:** `/api/places/{place}/floors`
-- **Description:** Creates a new sub-floor under a place.
-- **Allowed Roles:** Place owner.
-
-#### Request Body
-
-```json
-{
-    "name": "First Sub-floor",
-    "number": 2
-}
-```
-
-**Fields:**
-
-- `name` (string, required): The name of the sub-floor.
 - `number` (integer, required): The floor number.
 
 #### Validation Rules
@@ -157,11 +71,10 @@
 {
     "message": "Floor created successfully!",
     "data": {
-        "id": 2,
-        "organization_id": null,
-        "place_id": 1,
-        "name": "First Sub-floor",
-        "number": 2,
+        "id": 1,
+        "building_id": 1,
+        "name": "Floor 1",
+        "number": 1,
         "created_at": "2026-05-20T14:58:20+03:00",
         "updated_at": "2026-05-20T14:58:20+03:00"
     }

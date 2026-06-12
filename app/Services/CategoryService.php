@@ -181,6 +181,12 @@ class CategoryService
      */
     public function getCategoriesTree(User $user, array $filters = [], array $with = []): array
     {
+
+        // dd(
+        //     Category::count(),
+        //     Category::whereNull('owner_id')->count(),
+        //     Category::whereNotNull('owner_id')->count()
+        // );
         $cacheKey = 'categories_' . $user->id . '_' . md5(json_encode([
             'filters' => $filters,
             'with' => $with,
@@ -188,31 +194,30 @@ class CategoryService
 
         return Cache::tags(['categories', 'user_' . $user->id])->remember($cacheKey, 3600, function () use ($user, $filters, $with) {
             $query = Category::accessibleBy($user)->with($with ?: []);
-            // if ($organizationId || $user->isOrganization()) {
-            // if ($user->isOrganization()) {
+            if ($user->isOrganization()) {
 
-            //     $org = $user->organizationRoleOrganization();
+                $org = $user->organizationRoleOrganization();
 
-            //     if (!$org) { /// 
-            //         return collect();
-            //     }
+                if (!$org) { /// 
+                    return collect();
+                }
 
-            //     $query->where('owner_id', $user->id)
-            //         ->whereHas('organizations', function ($q) use ($org) {
-            //             $q->where('organizations.id', $org->id);
-            //         });
-            // } else {
-            //     $query->where(function ($q) use ($user) {
+                $query->where('owner_id', $user->id)
+                    ->whereHas('organizations', function ($q) use ($org) {
+                        $q->where('organizations.id', $org->id);
+                    });
+            } else {
+                $query->where(function ($q) use ($user) {
 
-            //         $q->whereNull('owner_id') // main places
+                    $q->whereNull('owner_id') // main places
 
-            //             ->orWhere('owner_id', $user->id) // created by the current user
+                        ->orWhere('owner_id', $user->id) // created by the current user
 
-            //             ->orWhereHas('owner', function ($q) {
-            //                 $q->where('role', UserRoleEnum::ORGANIZATION->value); // created by any organization
-            //             });
-            //     });
-            // }
+                        ->orWhereHas('owner', function ($q) {
+                            $q->where('role', UserRoleEnum::ORGANIZATION->value); // created by any organization
+                        });
+                });
+            }
 
             $query
                 ->when(
@@ -237,7 +242,7 @@ class CategoryService
                 ->when(
                     !empty($filters['has_organizations']),
                     fn($q) =>
-                    $q->has('organizations', '>', 1)
+                    $q->has('organizations', '>=', 1)
                 )
                 // ->when(
                 //     $filters['owner_id'] ?? null,

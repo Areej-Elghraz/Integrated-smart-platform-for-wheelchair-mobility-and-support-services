@@ -1,3 +1,23 @@
+// ==========================
+// GLOBAL API STANDARDS (PLEASE READ FIRST)
+// ==========================
+// 1. HEADERS & TOKEN:
+//    - ALL endpoints (except /login, /signup, /forget-password, /reset-password) require an Authorization header.
+//    - Header Format: 
+//      "headers": {
+//         "Authorization": "Bearer {your_token_here}",
+//         "Accept": "application/json"
+//      }
+//
+// 2. HTTP METHODS & DATA TYPES:
+//    - GET Requests: Any data shown in the "request" block must be sent as "query_parameters" in the URL (e.g., ?category_id=1&has_categories=true).
+//    - POST/PUT/PATCH Requests: Any data shown in the "request" block must be sent as the "body" of the request (JSON or FormData if files exist).
+//    - PATH Parameters: Any endpoint containing curly braces like {id} or {session} means this is a URL parameter (e.g., /api/places/5).
+//
+// 3. FILE UPLOADS:
+//    - If "media" or "image" is required, you must send the request body as "multipart/form-data" instead of "application/json".
+// ==========================
+
 //Authentication
 [
 // register
@@ -135,13 +155,14 @@
   "bot_message": {
     "sender_type": "bot",
     "content": "سلامتك يا أحمد. ألاحظ أن نبضات قلبك مرتفعة قليلاً. هل تحب أن أرسل رسالة استغاثة (SOS) للمرافق الخاص بك؟",
-    "language_detected": "ar",
-    "intent": "health_complaint",
     "session_id": 1,
     "updated_at": "2026-05-28T02:50:43.000000Z",
     "created_at": "2026-05-28T02:50:43.000000Z",
     "id": 2
-  }
+  },
+  "intent": "health_complaint", // (options: "greeting", "health_complaint", "navigation", "emergency", "general")
+  "confidence": 0.98, // (example: Float 0.0 to 1.0)
+  "language": "ar" // (options: "ar", "en")
 },
 
 // Floors & Maps
@@ -150,8 +171,7 @@
   "message": "Floor created successfully!",
   "data": {
     "id": 1,
-    "organization_id": 1,
-    "place_id": null,
+    "building_id": 1,
     "name": "Ground Floor",
     "number": 1,
     "created_at": "2026-05-20T14:58:20+03:00",

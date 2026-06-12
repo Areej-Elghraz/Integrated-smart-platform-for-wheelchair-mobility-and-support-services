@@ -14,7 +14,6 @@ class PlaceFactory extends Factory
         return [
             'name' => fake()->address(),
             'description' => fake()->paragraph(),
-            'organization_id' => \App\Models\Organization::factory(),
             'owner_id' => \App\Models\User::factory(),
         ];
     }

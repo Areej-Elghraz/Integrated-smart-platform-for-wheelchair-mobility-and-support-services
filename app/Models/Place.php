@@ -26,7 +26,6 @@ class Place extends Model
     protected $fillable = [
         'name',
         'description',
-        'organization_id',
         'parent_place_id',
         'country_id',
         'city_id',
@@ -42,8 +41,9 @@ class Place extends Model
         'rotation',
     ];
 
+    protected $with = ['floor', 'categories'];
+
     protected $hidden = [
-        'organization_id',
         'owner_id',
         'parent_place_id',
         'country_id',
@@ -56,7 +56,6 @@ class Place extends Model
         'points'             => 'array',
         'owner_id'           => 'integer',
         'parent_place_id'    => 'integer',
-        'organization_id'    => 'integer',
         'country_id'         => 'integer',
         'city_id'            => 'integer',
         'floor_id'           => 'integer',
@@ -77,11 +76,6 @@ class Place extends Model
         'categories.children',
         'categories.organizations',
         'categories.places',
-        'organization',
-        'organization.owner',
-        'organization.categories',
-        'organization.places',
-        'organization.city',
         'country',
         'city',
         'reviews',
@@ -92,8 +86,9 @@ class Place extends Model
         'children',
         'floor',
         'floor.map',
-        'floors',
-        'floors.map',
+        'floor.building',
+        'floor.building.organization',
+        'map',
     ];
 
     public function scopeSearch($query, ?string $term)
@@ -110,7 +105,7 @@ class Place extends Model
 
             return $org
                 ? $query->where('places.owner_id', $user->id)
-                ->where('places.organization_id', $org->id)
+                ->whereHas('floor.building', fn($q) => $q->where('organization_id', $org->id))
                 : $query->whereRaw('1=0');
         }
 
@@ -131,11 +126,6 @@ class Place extends Model
     public function getImageAttribute($value)
     {
         return $value ? asset('storage/' . $value) : null;
-    }
-
-    public function organization(): BelongsTo
-    {
-        return $this->belongsTo(Organization::class);
     }
 
     public function categories(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
@@ -180,7 +170,7 @@ class Place extends Model
     {
         return $this->average_rating;
     }
-    
+
     // public function getVisitorsCountAttribute(): int
     // {
     //     return $this->visitors()->count();
@@ -239,12 +229,8 @@ class Place extends Model
     {
         return $this->belongsTo(Floor::class, 'floor_id');
     }
-
-    /**
-     * Get the sub-floors inside this place.
-     */
-    public function floors(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function map(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->hasMany(Floor::class, 'place_id');
+        return $this->belongsTo(Floor::class, 'map_id');
     }
 }

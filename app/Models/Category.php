@@ -49,13 +49,11 @@ class Category extends Model
         'organizations',
         'organizations.owner',
         'organizations.categories',
-        'organizations.places',
         'organizations.country',
         'organizations.city',
         'places',
         'places.owner',
         'places.categories',
-        'places.organization',
         'places.reviews',
         'places.favoritedBy',
     ];
@@ -86,11 +84,11 @@ class Category extends Model
 
         return $query->where(function ($q) use ($user) {
             $q->whereNull('categories.owner_id')
-                // ->orWhere('categories.owner_id', $user->id)
-                // ->orWhereHas('owner', function ($q) {
-                //     $q->where('role', UserRoleEnum::ORGANIZATION->value);
-                // })
-                ;
+                ->orWhere('categories.owner_id', $user->id)
+                ->orWhereHas('owner', function ($q) {
+                    $q->where('role', UserRoleEnum::ORGANIZATION->value);
+                })
+            ;
         });
     }
 

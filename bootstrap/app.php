@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             // 'authorized' => \App\Http\Middleware\AdminMiddleware::class,
             'ability' => CheckForAnyAbility::class,
+            'verify_wheelchair_api_key' => \App\Http\Middleware\VerifyWheelchairApiKey::class,
         ]);
 
         $middleware->append(\App\Http\Middleware\SetUserLocale::class);
@@ -29,16 +30,16 @@ return Application::configure(basePath: dirname(__DIR__))
         //             $model = __('messages.resources.' . strtolower(class_basename($prev->getModel())) . '.singular');
         //             return response()->json([
         //                 'message' => __('messages.404_not_found', ['model' => $model]),
-    
+
         //             ], 404);
         //         }
-    
+
         //         return response()->json([
         //             'message' => __('messages.404_not_found', ['model' => __('messages.resources.resource.singular')]),
         //         ], 404);
         //     }
         // });
-    
+
         // // Validation errors
         // $exceptions->render(function (\Illuminate\Validation\ValidationException $e, $request) {
         //     if ($request->expectsJson()) {
@@ -48,7 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
         //         ], 422);
         //     }
         // });
-    
+
         // // Unauthorized
         // $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, $request) {
         //     if ($request->expectsJson()) {
@@ -57,7 +58,7 @@ return Application::configure(basePath: dirname(__DIR__))
         //         ], 401);
         //     }
         // });
-    
+
         // $exceptions->render(function (\Illuminate\Auth\Access\AuthorizationException $e, $request) {
         //     if ($request->expectsJson()) {
         //         return response()->json([
@@ -65,7 +66,7 @@ return Application::configure(basePath: dirname(__DIR__))
         //         ], 403);
         //     }
         // });
-    
+
         // $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException $e, $request) {
         //     if ($request->expectsJson()) {
         //         return response()->json([
@@ -73,7 +74,7 @@ return Application::configure(basePath: dirname(__DIR__))
         //         ], 405);
         //     }
         // });
-    
+
         // $exceptions->render(function (\Illuminate\Http\Exceptions\ThrottleRequestsException $e, $request) {
         //     if ($request->expectsJson()) {
         //         return response()->json([
@@ -81,7 +82,7 @@ return Application::configure(basePath: dirname(__DIR__))
         //         ], 429);
         //     }
         // });
-    
+
         // $exceptions->render(function (\Illuminate\Database\QueryException $e, $request) {
         //     if ($request->expectsJson()) {
         //         return response()->json([
@@ -89,7 +90,7 @@ return Application::configure(basePath: dirname(__DIR__))
         //         ], 500);
         //     }
         // });
-    
+
         // $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, $request) {
         //     if ($request->expectsJson()) {
         //         return response()->json([
@@ -97,7 +98,7 @@ return Application::configure(basePath: dirname(__DIR__))
         //         ], $e->getStatusCode());
         //     }
         // });
-    
+
         // // Model not found
         // $exceptions->render(function (\Illuminate\Database\Eloquent\ModelNotFoundException $e, $request) {
         //     if ($request->expectsJson()) {
@@ -107,7 +108,7 @@ return Application::configure(basePath: dirname(__DIR__))
         //         ], 404);
         //     }
         // });
-    
+
         // $exceptions->render(function (\Symfony\Component\HttpFoundation\File\Exception\FileException $e, $request) {
         //     if ($request->expectsJson()) {
         //         return response()->json([
@@ -115,7 +116,7 @@ return Application::configure(basePath: dirname(__DIR__))
         //         ], 500);
         //     }
         // });
-    
+
         // $exceptions->render(function (\GuzzleHttp\Exception\RequestException $e, $request) {
         //     if ($request->expectsJson()) {
         //         return response()->json([
@@ -123,7 +124,7 @@ return Application::configure(basePath: dirname(__DIR__))
         //         ], 502);
         //     }
         // });
-    
+
         // $exceptions->render(function (\JsonException $e, $request) {
         //     if ($request->expectsJson()) {
         //         return response()->json([
@@ -131,7 +132,7 @@ return Application::configure(basePath: dirname(__DIR__))
         //         ], 400);
         //     }
         // });
-    
+
         // $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, $request) {
         //     if ($request->expectsJson()) {
         //         return response()->json([
@@ -139,7 +140,7 @@ return Application::configure(basePath: dirname(__DIR__))
         //         ], 419);
         //     }
         // });
-    
+
         // // Invalid ability (Sanctum)
         // $exceptions->render(function (\Exception $e, $request) {
         //     if ($e instanceof \Laravel\Sanctum\Exceptions\MissingAbilityException) {
@@ -148,7 +149,7 @@ return Application::configure(basePath: dirname(__DIR__))
         //         ], 403);
         //     }
         // });
-    
+
         // $exceptions->render(function (\Laravel\Sanctum\Exceptions\MissingScopeException $e, $request) {
         //     if ($request->expectsJson()) {
         //         return response()->json([
@@ -156,7 +157,7 @@ return Application::configure(basePath: dirname(__DIR__))
         //         ], 403);
         //     }
         // });
-    
+
         // $exceptions->render(function (\Throwable $e, $request) {
         //     if ($request->expectsJson()) {
         //         return response()->json([

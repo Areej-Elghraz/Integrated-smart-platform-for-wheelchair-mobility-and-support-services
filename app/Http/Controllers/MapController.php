@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Storage;
 
 class MapController extends ApiController
 {
+    use \App\Traits\LogsAdminActions;
+
     /**
      * Store or update map associated with a floor.
      */
@@ -103,8 +105,10 @@ class MapController extends ApiController
         if ($existingMap) {
             $existingMap->update($mapData);
             $map = $existingMap->fresh();
+            $this->logAdminAction('updated', $map);
         } else {
             $map = $floor->map()->create($mapData);
+            $this->logAdminAction('created', $map);
         }
 
         return $this->successResponse(
@@ -155,6 +159,9 @@ class MapController extends ApiController
         if ($rawPath && Storage::disk('public')->exists($rawPath)) {
             Storage::disk('public')->delete($rawPath);
         }
+
+        $this->logAdminAction('deleted', $map);
+
         $map->delete();
 
         return $this->successResponse(

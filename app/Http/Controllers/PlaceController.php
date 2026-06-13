@@ -20,6 +20,7 @@ use App\Traits\HasInteractionActions;
 class PlaceController extends ApiController
 {
     use HasInteractionActions;
+    use \App\Traits\LogsAdminActions;
 
     protected $placeService;
 
@@ -74,7 +75,10 @@ class PlaceController extends ApiController
 
         $with = $this->relationships($request->query('include', ''), auth('sanctum')->user());
 
-        $places = $floor->places()->with($with)->get();
+        $places = $floor->places()
+            ->search($request->input('search'))
+            ->with($with)
+            ->get();
 
         return $this->successResponse(
             message: __('messages.actions.retrieved_success', ['resource' => __('messages.resources.place.plural')]),
@@ -107,6 +111,8 @@ class PlaceController extends ApiController
 
         $place = $this->placeService->createPlace(auth('sanctum')->user(), $data, $path, $with);
         $place->load('floor');
+
+        $this->logAdminAction('created', $place, $data);
 
         return $this->successResponse(
             message: __('messages.actions.created_success', ['resource' => __('messages.resources.place.singular')]),
@@ -142,6 +148,8 @@ class PlaceController extends ApiController
         }
         $place = $this->placeService->createPlace(auth('sanctum')->user(), $request->validated(), $path, $with);
 
+        $this->logAdminAction('created', $place, $request->validated());
+
         return $this->successResponse(
             message: __('messages.actions.created_success', ['resource' => __('messages.resources.place.singular')]),
             status: 201,
@@ -165,6 +173,8 @@ class PlaceController extends ApiController
 
         $place = $this->placeService->updatePlace(auth('sanctum')->user(), $place, $request->validated(), $path, $with);
 
+        $this->logAdminAction('updated', $place, $request->validated());
+
         return $this->successResponse(
             message: __('messages.actions.updated_success', ['resource' => __('messages.resources.place.singular')]),
             status: 200,
@@ -176,6 +186,8 @@ class PlaceController extends ApiController
     {
         $this->authorize('delete', $place);
 
+        $this->logAdminAction('deleted', $place);
+
         $this->placeService->deletePlace(auth('sanctum')->user(), $place);
 
         return $this->successResponse(
@@ -186,5 +198,58 @@ class PlaceController extends ApiController
     public function visit(Place $place)
     {
         return $this->recordVisit($place);
+    }
+
+    public function lastVisited(Request $request)
+    {
+        $user = $request->user();
+        $targetUserId = $request->query('user_id');
+
+        if ($targetUserId && $targetUserId != $user->id) {
+            if (!in_array($user->role, ['companion', 'doctor'])) {
+                return $this->errorResponse('Unauthorized to view other users.', 403);
+            }
+            
+            $isFriend = $user->friends()->wherePivot('status', 'accepted')->where('users.id', $targetUserId)->exists();
+            if (!$isFriend) {
+                return $this->errorResponse('Not connected to this user.', 403);
+            }
+            $targetUser = User::findOrFail($targetUserId);
+        } else {
+            if ($user->role !== 'user') {
+                return $this->errorResponse('Unauthorized. Patients only, unless user_id is provided.', 403);
+            }
+            $targetUser = $user;
+        }
+
+        $search = $request->query('search');
+        $limit = $request->query('limit', 15);
+
+        $query = \App\Models\Trip::whereHas('wheelchair', function ($q) use ($targetUser) {
+            $q->where('user_id', $targetUser->id);
+        })->where('status', 'completed')->with('place')->latest();
+        
+        if ($search) {
+            $query->whereHas('place', function ($q) use ($search) {
+                $q->search($search);
+            });
+        }
+
+        $trips = $query->paginate($limit);
+        $lastVisitedPlaces = $trips->getCollection()->pluck('place')->filter()->values();
+
+        return $this->successResponse(
+            message: __('messages.actions.retrieved_success', ['resource' => 'Last Visited Places']),
+            status: 200,
+            parameters: [
+                'data' => PlaceResource::collection($lastVisitedPlaces)->resolve(),
+                'meta' => [
+                    'current_page' => $trips->currentPage(),
+                    'last_page' => $trips->lastPage(),
+                    'per_page' => $trips->perPage(),
+                    'total' => $trips->total(),
+                ]
+            ]
+        );
     }
 }

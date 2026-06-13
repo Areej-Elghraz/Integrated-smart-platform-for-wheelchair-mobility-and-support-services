@@ -27,6 +27,11 @@ class LoginController extends ApiController
             throw ValidationException::withMessages([$errorField => __('auth.failed')]);
         }
 
+        // Block unverified users BEFORE authenticating
+        if (is_null($user->email_verified_at)) {
+            return $this->errorResponse('Please verify your account using the OTP sent to you before proceeding.', 403);
+        }
+
         if (!Auth::attempt([$field => $login, 'password' => $request->password], $request->remember ?? false)) {
             return $this->errorResponse(
                 __('auth.failed'),
@@ -34,19 +39,6 @@ class LoginController extends ApiController
             );
         }
 
-        $user = auth('sanctum')->user();
-
-        if (is_null($user->email_verified_at)) {
-            // Log out the user since they are not verified
-            Auth::logout();
-            return $this->errorResponse(
-                'Please verify your email using the OTP sent to you before logging in.',
-                403,
-            );
-        }
-
-        // dd(auth('sanctum')->user());
-        $user   = auth('sanctum')->user();
         $tokens = $generateTokensService($user, $request->remember ?? false);
 
         return $this->successResponse(message: __('auth.login_success'), parameters: [

@@ -22,7 +22,11 @@ class FriendController extends ApiController
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $friends = $user->friends;
+        $search = $request->query('search');
+
+        $friends = $user->friends()->when($search, function($q, $search) {
+            $q->where('name', 'like', "%{$search}%");
+        })->get();
 
         return $this->successResponse('Friends retrieved successfully.', parameters: ['data' => $friends]);
     }
@@ -45,40 +49,7 @@ class FriendController extends ApiController
             return $this->errorResponse('User not found.', 404);
         }
 
-        // --- Companion Limitation Check ---
-        // A companion can only follow 1 user.
-        if ($user->isCompanion()) {
-            $companionFriendships = Friendship::where('user_id', $user->id)->orWhere('friend_id', $user->id)->count();
-            if ($companionFriendships >= 1) {
-                return $this->errorResponse('Companions can only follow one user.', 400);
-            }
-        }
-
-        if ($receiver->isCompanion()) {
-            $companionFriendships = Friendship::where('user_id', $receiver->id)->orWhere('friend_id', $receiver->id)->count();
-            if ($companionFriendships >= 1) {
-                return $this->errorResponse('This companion is already following a user.', 400);
-            }
-        }
-        
-        // --- Doctor Limitation Check ---
-        // A user can only have 1 doctor.
-        if ($user->isUser() && $receiver->isDoctor()) {
-            $hasDoctor = $user->friendsOfMine()->where('role', UserRoleEnum::DOCTOR->value)->exists() ||
-                         $user->friendOf()->where('role', UserRoleEnum::DOCTOR->value)->exists();
-            if ($hasDoctor) {
-                return $this->errorResponse('You can only have one doctor.', 400);
-            }
-        }
-
-        if ($user->isDoctor() && $receiver->isUser()) {
-            $hasDoctor = $receiver->friendsOfMine()->where('role', UserRoleEnum::DOCTOR->value)->exists() ||
-                         $receiver->friendOf()->where('role', UserRoleEnum::DOCTOR->value)->exists();
-            if ($hasDoctor) {
-                return $this->errorResponse('This user already has a doctor.', 400);
-            }
-        }
-        // ----------------------------------
+        // Limits removed. Companions and Doctors can add friends normally.
 
         $existing = Friendship::where(function ($q) use ($user, $friendId) {
             $q->where('user_id', $user->id)->where('friend_id', $friendId);

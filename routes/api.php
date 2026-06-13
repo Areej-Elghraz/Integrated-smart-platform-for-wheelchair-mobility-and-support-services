@@ -32,10 +32,11 @@ Route::post('/reset-password', \App\Http\Controllers\Auth\ResetPasswordControlle
 
 
 Route::get('/medical-conditions', [\App\Http\Controllers\MedicalConditionController::class, 'index'])->name('medical-conditions.index');
+Route::get('/languages', [\App\Http\Controllers\LanguageController::class, 'index'])->name('languages.index');
 
 Route::post('/support', [\App\Http\Controllers\SupportController::class, 'store'])->name('support.store');
 
-Route::middleware(['auth:sanctum', 'ability:' . TokenAbilityEnum::ACCESS_TOKEN->value])->group(function () {
+Route::middleware(['auth:sanctum', 'ability:' . TokenAbilityEnum::ACCESS_TOKEN->value, 'verified_user'])->group(function () {
   // authentication
   Route::post('/logout', LogoutController::class)->name('auth.logout');
   Route::put('/profile/update', UpdateDataController::class)->name('auth.profile.updata_data');
@@ -56,7 +57,8 @@ Route::middleware(['auth:sanctum', 'ability:' . TokenAbilityEnum::ACCESS_TOKEN->
   // Places - Nested under Floor for list & create, direct ID for show/update/delete
   Route::get('/floors/{floor}/places', [\App\Http\Controllers\PlaceController::class, 'indexForFloor'])->name('floors.places.index');
   Route::post('/floors/{floor}/places', [\App\Http\Controllers\PlaceController::class, 'storeForFloor'])->name('floors.places.store');
-  Route::apiResource('places', \App\Http\Controllers\PlaceController::class)->only(['show', 'update', 'destroy']);
+  Route::get('/places/last-visited', [\App\Http\Controllers\PlaceController::class, 'lastVisited'])->name('places.last_visited');
+  Route::apiResource('places', \App\Http\Controllers\PlaceController::class)->only(['index', 'show', 'update', 'destroy']);
   Route::post('/places/{place}/reviews', [\App\Http\Controllers\ReviewController::class, 'store'])->name('reviews.store');
   Route::post('/places/{place}/favorite', [\App\Http\Controllers\FavoriteController::class, 'toggle'])->name('favorites.toggle');
   Route::post('/places/{place}/visit', [\App\Http\Controllers\PlaceController::class, 'visit'])->name('places.visit');
@@ -114,6 +116,13 @@ Route::middleware(['auth:sanctum', 'ability:' . TokenAbilityEnum::ACCESS_TOKEN->
   Route::post('/community/friends/{user}/handle', [\App\Http\Controllers\Community\FriendController::class, 'handle'])->name('community.friends.handle');
   Route::delete('/community/friends/{user}/remove', [\App\Http\Controllers\Community\FriendController::class, 'remove'])->name('community.friends.remove');
 
+  // Connection Requests (Companion & Doctor)
+  Route::post('/connections/send', [\App\Http\Controllers\ConnectionRequestController::class, 'sendRequest'])->name('connections.send');
+  Route::post('/connections/{connectionRequest}/handle', [\App\Http\Controllers\ConnectionRequestController::class, 'handleRequest'])->name('connections.handle');
+  Route::get('/connections/pending', [\App\Http\Controllers\ConnectionRequestController::class, 'indexPending'])->name('connections.pending');
+  Route::get('/connections/companions', [\App\Http\Controllers\ConnectionRequestController::class, 'indexConnectedCompanions'])->name('connections.companions');
+  Route::get('/connections/doctor', [\App\Http\Controllers\ConnectionRequestController::class, 'getConnectedDoctor'])->name('connections.doctor');
+
   // Comments CRUD and engagement
   Route::post('/posts/{post}/comments', [\App\Http\Controllers\CommentController::class, 'storePost'])->name('posts.comments.store');
   Route::get('/posts/{post}/comments', [\App\Http\Controllers\CommentController::class, 'indexPost'])->name('posts.comments.index');
@@ -147,14 +156,16 @@ Route::middleware(['auth:sanctum', 'ability:' . TokenAbilityEnum::ACCESS_TOKEN->
   Route::get('/dashboard/user', [\App\Http\Controllers\DashboardController::class, 'userDashboard'])->name('dashboard.user');
   Route::get('/dashboard/companion', [\App\Http\Controllers\DashboardController::class, 'companionDashboard'])->name('dashboard.companion');
   Route::get('/dashboard/doctor', [\App\Http\Controllers\DashboardController::class, 'doctorDashboard'])->name('dashboard.doctor');
+  Route::get('/dashboard/org-admin', [\App\Http\Controllers\DashboardController::class, 'orgAdminDashboard'])->name('dashboard.org-admin');
 
   // Live Locations
   Route::post('/location/user', [\App\Http\Controllers\LocationController::class, 'userLocation'])->name('location.user');
+  Route::get('/location/companion/user', [\App\Http\Controllers\LocationController::class, 'companionLocation'])->name('location.companion.user');
 });
 
 // IoT Routes (Hardware/Wheelchair)
 Route::middleware(['verify_wheelchair_api_key'])->group(function () {
-    Route::post('/trip/movement/update', [\App\Http\Controllers\TripController::class, 'updateMovementStatus'])->name('iot.trip.movement.update');
-    Route::post('/trip/events', [\App\Http\Controllers\EventController::class, 'storeTripEvent'])->name('iot.trip.events.store');
-    Route::post('/wheelchair/health', [\App\Http\Controllers\WheelchairController::class, 'updateCurrentVitalState'])->name('iot.wheelchair.health.update');
+  Route::post('/trip/movement/update', [\App\Http\Controllers\TripController::class, 'updateMovementStatus'])->name('iot.trip.movement.update');
+  Route::post('/trip/events', [\App\Http\Controllers\EventController::class, 'storeTripEvent'])->name('iot.trip.events.store');
+  Route::post('/wheelchair/health', [\App\Http\Controllers\WheelchairController::class, 'updateCurrentVitalState'])->name('iot.wheelchair.health.update');
 });

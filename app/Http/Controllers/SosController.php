@@ -21,12 +21,16 @@ class SosController extends ApiController
 
         $user = $request->user();
 
-        // Collect all accepted friends (companions + doctors)
-        $friendsOfMine = $user->friendsOfMine()->wherePivot('status', 'accepted')->get();
-        $friendOf = $user->friendOf()->wherePivot('status', 'accepted')->get();
-        $allFriends = $friendsOfMine->merge($friendOf);
+        // Collect connected companions and doctor
+        $companions = collect($user->connectedCompanions);
+        $doctor = $user->connectedDoctor;
+        
+        $allConnected = $companions;
+        if ($doctor) {
+            $allConnected->push($doctor);
+        }
 
-        if ($allFriends->isEmpty()) {
+        if ($allConnected->isEmpty()) {
             return $this->errorResponse('No connected companions or doctors to alert.', 400);
         }
 
@@ -48,9 +52,9 @@ class SosController extends ApiController
         ];
 
         // Dispatch the internal event. Listeners will handle Broadcast and DB Notification.
-        event(new \App\Events\SosTriggeredEvent($user, $payload, $allFriends));
+        event(new \App\Events\SosTriggeredEvent($user, $payload, $allConnected));
 
-        return $this->successResponse('SOS alert sent to ' . $allFriends->count() . ' connected companions.', 200, ['triggered_to' => $allFriends->count()]);
+        return $this->successResponse('SOS alert sent to ' . $allConnected->count() . ' connected companions/doctors.', 200, ['triggered_to' => $allConnected->count()]);
     }
 
     /**
@@ -60,13 +64,17 @@ class SosController extends ApiController
     {
         $user = $request->user();
 
-        $friendsOfMine = $user->friendsOfMine()->wherePivot('status', 'accepted')->get();
-        $friendOf = $user->friendOf()->wherePivot('status', 'accepted')->get();
-        $allFriends = $friendsOfMine->merge($friendOf);
+        $companions = collect($user->connectedCompanions);
+        $doctor = $user->connectedDoctor;
+        
+        $allConnected = $companions;
+        if ($doctor) {
+            $allConnected->push($doctor);
+        }
 
-        foreach ($allFriends as $friend) {
-            broadcast(new \App\Events\SosCancelled($friend->id, ['user_id' => $user->id, 'user_name' => $user->name]));
-            Log::info("SOS CANCEL broadcast to {$friend->name} for patient {$user->name}");
+        foreach ($allConnected as $connection) {
+            broadcast(new \App\Events\SosCancelled($connection->id, ['user_id' => $user->id, 'user_name' => $user->name]));
+            Log::info("SOS CANCEL broadcast to {$connection->name} for patient {$user->name}");
         }
 
         return $this->successResponse('SOS alert cancelled.');

@@ -73,6 +73,15 @@ class OrganizationPolicy
                 && $organization->owner_id == $user->id
                 && $org->id == $organization->id;
         }
+
+        // Companion acting on behalf of connected User
+        if ($user->isCompanion()) {
+            $connectedUser = $user->connectedUserForCompanion;
+            if ($connectedUser && $organization->owner_id == $connectedUser->id) {
+                return true;
+            }
+        }
+
         // normal user role
         return $organization->owner_id == $user->id;
     }
@@ -106,6 +115,6 @@ class OrganizationPolicy
      */
     public function visit(User $user, Organization $organization): bool
     {
-        return $user->isUser();
+        return $user->isUser() || $user->isCompanion() || $user->isDoctor();
     }
 }

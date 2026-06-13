@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 
 class FloorController extends ApiController
 {
+    use \App\Traits\LogsAdminActions;
+
     /**
      * Get allowed relations from request include query.
      */
@@ -31,7 +33,10 @@ class FloorController extends ApiController
         $this->authorize('view', $building);
 
         $with = $this->getRelations($request);
-        $floors = $building->floors()->with($with)->get();
+        $floors = $building->floors()
+            ->search($request->input('search'))
+            ->with($with)
+            ->get();
 
         return $this->successResponse(
             message: __('messages.actions.retrieved_success', ['resource' => __('messages.resources.floor.plural')]),
@@ -50,6 +55,8 @@ class FloorController extends ApiController
         $this->authorize('update', $building);
 
         $floor = $building->floors()->create($request->validated());
+
+        $this->logAdminAction('created', $floor, $request->validated());
 
         return $this->successResponse(
             message: __('messages.actions.created_success', ['resource' => __('messages.resources.floor.singular')]),
@@ -86,6 +93,8 @@ class FloorController extends ApiController
 
         $floor->update($request->validated());
 
+        $this->logAdminAction('updated', $floor, $request->validated());
+
         return $this->successResponse(
             message: __('messages.actions.updated_success', ['resource' => __('messages.resources.floor.singular')]),
             status: 200,
@@ -99,6 +108,8 @@ class FloorController extends ApiController
     public function destroy(Floor $floor)
     {
         $this->authorize('delete', $floor);
+
+        $this->logAdminAction('deleted', $floor);
 
         $floor->delete();
 

@@ -1136,4 +1136,53 @@
       "message": "Friend removed successfully."
     }
   }
-]
+]// ==========================
+// RECENT UPDATES & COMPANION/DOCTOR INTEGRATION
+// ==========================
+{
+    "endpoint": "GET /api/languages",
+    "description": "Returns the list of supported languages for the platform.",
+    "request": {},
+    "response": {
+        "status": 200,
+        "message": "Languages retrieved successfully.",
+        "data": [
+            "en", "ar", "de", "fr", "ge", "hi", "ko", "vi"
+        ]
+    }
+},
+{
+    "endpoint": "GET /api/places/last-visited",
+    "description": "Retrieves the user's or their patient's last visited places. Supports global search via ?search parameter.",
+    "request": {
+        "query_parameters": {
+            "search": "optional string",
+            "limit": "optional integer",
+            "user_id": "optional integer (required for Companion/Doctor)"
+        }
+    },
+    "response": {
+        "status": 200,
+        "data": [{"id": 1, "name": "Mall"}]
+    }
+},
+{
+    "endpoint": "GET /api/location/companion/user",
+    "description": "Companion can fetch both the indoor and outdoor real-time location of their connected User.",
+    "request": {
+        "query_parameters": {"user_id": "required integer"}
+    },
+    "response": {
+        "status": 200,
+        "data": {"indoor": {}, "outdoor": {}}
+    }
+},
+{
+    "endpoint": "GET /api/dashboard/org-admin",
+    "description": "Dashboard for Organization Admins showing audit logs and organizations.",
+    "request": {},
+    "response": {
+        "status": 200,
+        "data": {"organizations": [], "recent_activity_logs": []}
+    }
+}

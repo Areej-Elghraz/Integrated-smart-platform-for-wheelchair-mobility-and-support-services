@@ -35,6 +35,12 @@ class Floor extends Model
         return $this->belongsTo(Building::class);
     }
 
+    public function scopeSearch($query, ?string $term)
+    {
+        if (!$term) return $query;
+        return $query->where('name', 'like', "%{$term}%");
+    }
+
     /**
      * Get the map layout associated with the floor.
      */

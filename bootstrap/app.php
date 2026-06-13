@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             // 'authorized' => \App\Http\Middleware\AdminMiddleware::class,
             'ability' => CheckForAnyAbility::class,
             'verify_wheelchair_api_key' => \App\Http\Middleware\VerifyWheelchairApiKey::class,
+            'verified_user' => \App\Http\Middleware\EnsureUserIsVerified::class,
         ]);
 
         $middleware->append(\App\Http\Middleware\SetUserLocale::class);

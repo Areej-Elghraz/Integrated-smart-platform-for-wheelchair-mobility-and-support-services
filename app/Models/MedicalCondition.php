@@ -10,20 +10,26 @@ class MedicalCondition extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name_en',
-        'name_ar',
+        'name',
     ];
 
-    protected $appends = ['name'];
-    protected $hidden = ['name_en', 'name_ar'];
+    protected $casts = [
+        'name' => 'array',
+    ];
 
-    public function getNameAttribute()
+    public function getNameAttribute($value)
     {
         $lang = request()->header('Accept-Language', 'en');
-        if (str_starts_with($lang, 'ar')) {
-            return $this->name_ar ?? $this->name_en;
+        // Extract base language code (e.g. 'en-US' -> 'en')
+        $langCode = substr($lang, 0, 2);
+        
+        $nameArray = json_decode($value, true);
+        if (!is_array($nameArray)) {
+            // Fallback if not json
+            return $value;
         }
-        return $this->name_en;
+
+        return $nameArray[$langCode] ?? $nameArray['en'] ?? null;
     }
 
     public function users()

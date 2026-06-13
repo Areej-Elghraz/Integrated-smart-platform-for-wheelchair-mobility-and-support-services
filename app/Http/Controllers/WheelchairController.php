@@ -199,9 +199,13 @@ class WheelchairController extends ApiController
             if ($validated['fall_status'] === 'critical') {
                 $user = $wheelchair->user;
                 if ($user) {
-                    $friendsOfMine = $user->friendsOfMine()->wherePivot('status', 'accepted')->get();
-                    $friendOf = $user->friendOf()->wherePivot('status', 'accepted')->get();
-                    $allFriends = $friendsOfMine->merge($friendOf);
+                    $companions = collect($user->connectedCompanions);
+                    $doctor = $user->connectedDoctor;
+                    
+                    $allConnected = $companions;
+                    if ($doctor) {
+                        $allConnected->push($doctor);
+                    }
 
                     $payload = [
                         'user' => [
@@ -216,10 +220,10 @@ class WheelchairController extends ApiController
                         'triggered_at' => now()->toISOString(),
                     ];
 
-                    foreach ($allFriends as $friend) {
-                        broadcast(new \App\Events\SosTriggered($friend->id, $payload));
-                        $friend->notify(new \App\Notifications\DatabaseNotification\SosAlertNotification($user, $payload));
-                        \Illuminate\Support\Facades\Log::info("Auto SOS broadcast to {$friend->name} for patient {$user->name} due to critical fall.");
+                    foreach ($allConnected as $connection) {
+                        broadcast(new \App\Events\SosTriggered($connection->id, $payload));
+                        $connection->notify(new \App\Notifications\DatabaseNotification\SosAlertNotification($user, $payload));
+                        \Illuminate\Support\Facades\Log::info("Auto SOS broadcast to {$connection->name} for patient {$user->name} due to critical fall.");
                     }
                 }
             }

@@ -12,15 +12,10 @@ class MedicalConditionController extends ApiController
      */
     public function index(): JsonResponse
     {
-        $locale = app()->getLocale();
-        $isAr = $locale === 'ar';
-
-        $conditions = MedicalCondition::all()->map(function ($cond) use ($isAr) {
+        $conditions = MedicalCondition::all()->map(function ($cond) {
             return [
                 'id' => $cond->id,
-                'name' => $isAr ? $cond->name_ar : $cond->name_en,
-                'category' => $isAr ? $cond->category_ar : $cond->category_en,
-                'description' => $isAr ? $cond->description_ar : $cond->description_en,
+                'name' => $cond->name,
             ];
         });
 

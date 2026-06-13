@@ -18,6 +18,7 @@ use App\Traits\HasInteractionActions;
 class OrganizationController extends ApiController
 {
     use HasInteractionActions;
+    use \App\Traits\LogsAdminActions;
 
     protected $organizationService;
 
@@ -61,7 +62,6 @@ class OrganizationController extends ApiController
             message: __('messages.actions.retrieved_success', ['resource' => __('messages.resources.organization.plural')]),
             status: 200,
             parameters: $organizations
-            // parameters: OrganizationResource::collection($organizations)->resolve()
         );
     }
 
@@ -77,7 +77,6 @@ class OrganizationController extends ApiController
             message: __('messages.actions.retrieved_success', ['resource' => __('messages.resources.organization.singular')]),
             status: 200,
             parameters: $organization->toArray()
-            // parameters: (new OrganizationResource($organization))->resolve()
         );
     }
 
@@ -94,11 +93,12 @@ class OrganizationController extends ApiController
 
             $organization = $this->organizationService->createOrganization(auth('sanctum')->user(), $request->validated(), $path ?? null, $with);
 
+            $this->logAdminAction('created', $organization, $request->validated());
+
             return $this->successResponse(
                 message: __('messages.actions.created_success', ['resource' => __('messages.resources.organization.singular')]),
                 status: 201,
                 parameters: $organization
-                // parameters: (new OrganizationResource($organization))->resolve()
             );
         } catch (\Exception $e) {
             return $this->errorResponse($e->getMessage(), 403);
@@ -120,11 +120,12 @@ class OrganizationController extends ApiController
 
         $organization = $this->organizationService->updateOrganization(auth('sanctum')->user(), $organization, $request->validated(), $path ?? null, $with);
 
+        $this->logAdminAction('updated', $organization, $request->validated());
+
         return $this->successResponse(
             message: __('messages.actions.updated_success', ['resource' => __('messages.resources.organization.singular')]),
             status: 200,
             parameters: $organization
-            // parameters: (new OrganizationResource($organization))->resolve()
         );
     }
 
@@ -132,9 +133,7 @@ class OrganizationController extends ApiController
     {
         $this->authorize('delete', $organization);
 
-        // if ($organization->image && Storage::disk('public')->exists($organization->getRawOriginal('image'))) {
-        //     Storage::disk('public')->delete($organization->getRawOriginal('image'));
-        // }
+        $this->logAdminAction('deleted', $organization);
 
         $this->organizationService->deleteOrganization($organization);
 

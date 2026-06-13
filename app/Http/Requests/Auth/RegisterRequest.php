@@ -24,9 +24,9 @@ class RegisterRequest extends FormRequest
             'email' => 'required|email|unique:users,email',
             'password' => 'required|confirmed|string|min:6',
             'language' => ['sometimes', new \Illuminate\Validation\Rules\Enum(\App\Enums\LanguagePreferenceEnum::class)],
-            'phone' => 'sometimes|nullable|phone:AUTO,MOBILE|unique:users,phone',
-            'role' => 'sometimes|nullable|string|in:user,companion,doctor,organization,organization_admin',
-            
+            'role' => 'required|string|in:user,companion,doctor,organization,organization_admin',
+            'phone' => 'required_if:role,user,companion,doctor|nullable|phone:AUTO,MOBILE|unique:users,phone',
+
             // user role specific
             'gender' => 'required_if:role,user|string|in:male,female',
             'birth_date' => 'required_if:role,user|date|before:today',
@@ -35,10 +35,10 @@ class RegisterRequest extends FormRequest
             'doctor_username' => 'sometimes|nullable|string|exists:users,username',
             'medical_condition_ids' => 'sometimes|array',
             'medical_condition_ids.*' => 'exists:medical_conditions,id',
-            
+
             // companion role specific
             'target_username' => 'required_if:role,companion|string|exists:users,username',
-            
+
             // organization role specific
             'latitude' => 'required_if:role,organization|numeric|between:-90,90',
             'longitude' => 'required_if:role,organization|numeric|between:-180,180',

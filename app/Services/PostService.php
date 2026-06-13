@@ -33,6 +33,9 @@ class PostService
                 ->when($filters['content'] ?? null, function ($q, $content) {
                     $q->where('content', 'like', "%{$content}%");
                 })
+                ->when($filters['search'] ?? null, function ($q, $search) {
+                    $q->where('content', 'like', "%{$search}%");
+                })
                 ->when($filters['created_from'] ?? null, fn($q, $date) => $q->whereDate('created_at', '>=', $date))
                 ->when($filters['created_to'] ?? null, fn($q, $date) => $q->whereDate('created_at', '<=', $date))
                 ->when(

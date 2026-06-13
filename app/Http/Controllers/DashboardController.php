@@ -10,14 +10,14 @@ use Illuminate\Http\JsonResponse;
 
 class DashboardController extends ApiController
 {
-    public static function getDashboardData($targetUser, $requestingUser = null, $filter = 'today', $limit = null)
+    public static function getDashboardData($targetUser, $requestingUser = null, $filter = 'today', $limit = null, $search = null)
     {
         $wheelchairs = $targetUser->wheelchairs()->get();
         $wheelchairIds = $wheelchairs->pluck('id');
 
         // 1. Current Vital Data & AI Recommendation
         $aiData = \App\Models\AiRecommendation::whereIn('wheelchair_id', $wheelchairIds)->latest()->first();
-        
+
         $currentVitals = null;
         if ($aiData) {
             $currentVitals = [
@@ -58,7 +58,7 @@ class DashboardController extends ApiController
 
         foreach ($aggregatedData as $row) {
             $timeLabel = \Carbon\Carbon::parse($row->window_start)->format($filter === 'today' ? 'H:i' : 'Y-m-d');
-            
+
             if ($row->heart_rate_avg) {
                 $overviews['health_rate'][] = ['x_axis' => $timeLabel, 'y_axis' => round($row->heart_rate_avg, 1)];
             }
@@ -78,13 +78,19 @@ class DashboardController extends ApiController
             if ($alert) $recentAlerts[$type] = $alert;
         }
 
+        // 4. Last Visited Places (Moved to PlaceController@lastVisited)
         // 4. Last Visited Places (Only for Patient & Companion)
         $lastVisitedPlaces = [];
         if (!$requestingUser || $requestingUser->role !== 'doctor') {
             $query = Trip::whereHas('wheelchair', function ($q) use ($targetUser) {
                 $q->where('user_id', $targetUser->id);
             })->where('status', 'completed')->with('place')->latest();
-            
+
+            if ($search) {
+                $query->whereHas('place', function ($q) use ($search) {
+                    $q->search($search);
+                });
+            }
             if ($limit) {
                 $query->take($limit);
             }
@@ -98,7 +104,7 @@ class DashboardController extends ApiController
                 ->whereHas('wheelchair', function ($q) use ($targetUser) {
                     $q->where('user_id', $targetUser->id);
                 })->whereIn('status', ['started', 'in_progress'])->latest()->first();
-            
+
             if ($activeTrip) {
                 $lastTripUpdates = $activeTrip;
             }
@@ -127,7 +133,7 @@ class DashboardController extends ApiController
             if (!in_array($user->role, ['companion', 'doctor'])) {
                 return $this->errorResponse('Unauthorized to view other users.', 403);
             }
-            
+
             // Verify connection
             $isFriend = $user->friends()->wherePivot('status', 'accepted')->where('users.id', $targetUserId)->exists();
             if (!$isFriend) {
@@ -151,8 +157,10 @@ class DashboardController extends ApiController
         if ($limit !== null && $limit <= 0) {
             return $this->errorResponse('Limit must be a positive integer', 400);
         }
-        
-        $data = self::getDashboardData($targetUser, $user, $filter, $limit);
+
+        $search = request()->query('search');
+
+        $data = self::getDashboardData($targetUser, $user, $filter, $limit, $search);
 
         return $this->successResponse('User dashboard data retrieved.', parameters: ['data' => $data]);
     }
@@ -180,7 +188,7 @@ class DashboardController extends ApiController
         }
 
         $patients = $user->friends()->wherePivot('status', 'accepted')->where('role', 'user')->get();
-        
+
         $stats = [
             'total' => $patients->count(),
             'normal' => 0,
@@ -202,6 +210,28 @@ class DashboardController extends ApiController
             'data' => [
                 'statistics' => $stats,
                 'patients' => $patients,
+            ]
+        ]);
+    }
+
+    public function orgAdminDashboard(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (!$user->isOrganization() && !$user->isOrganizationAdmin()) {
+            return $this->errorResponse('Unauthorized access. Only Organization Admins can view this dashboard.', 403);
+        }
+
+        $auditLogs = \App\Models\AuditLog::where('user_id', $user->id)
+            ->latest()
+            ->take(50)
+            ->get();
+
+        $organizations = $user->organizations()->get();
+
+        return $this->successResponse('Organization Admin dashboard data retrieved.', parameters: [
+            'data' => [
+                'organizations' => $organizations,
+                'recent_activity_logs' => $auditLogs,
             ]
         ]);
     }

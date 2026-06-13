@@ -22,7 +22,7 @@ class PostController extends ApiController
 
     public function index(Request $request)
     {
-        $filters = $request->only(['user_id', 'content', 'created_from', 'created_to', 'sort_by', 'sort_direction', 'pagination']);
+        $filters = $request->only(['user_id', 'content', 'search', 'created_from', 'created_to', 'sort_by', 'sort_direction', 'pagination']);
         $with = ['user:id,name,image', 'sharedPost.user:id,name,image'];
 
         $posts = $this->postService->getPosts($request->user('sanctum'), $filters, $with);

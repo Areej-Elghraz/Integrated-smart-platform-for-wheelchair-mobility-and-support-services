@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Storage;
 
 class BuildingController extends ApiController
 {
+    use \App\Traits\LogsAdminActions;
+
     /**
      * Display a listing of buildings for an organization.
      */
@@ -20,7 +22,10 @@ class BuildingController extends ApiController
     {
         $this->authorize('view', $organization);
 
-        $buildings = $organization->buildings()->with(['floors', 'floors.map'])->get();
+        $buildings = $organization->buildings()
+            ->search($request->input('search'))
+            ->with(['floors', 'floors.map'])
+            ->get();
 
         return $this->successResponse(
             message: 'Buildings retrieved successfully.',
@@ -42,6 +47,8 @@ class BuildingController extends ApiController
         }
 
         $building = $organization->buildings()->create($data);
+
+        $this->logAdminAction('created', $building, $request->validated());
 
         return $this->successResponse(
             message: 'Building created successfully.',
@@ -83,6 +90,8 @@ class BuildingController extends ApiController
 
         $building->update($data);
 
+        $this->logAdminAction('updated', $building, $request->validated());
+
         return $this->successResponse(
             message: 'Building updated successfully.',
             status: 200,
@@ -100,6 +109,8 @@ class BuildingController extends ApiController
         if ($building->image && Storage::disk('public')->exists($building->getRawOriginal('image'))) {
             Storage::disk('public')->delete($building->getRawOriginal('image'));
         }
+
+        $this->logAdminAction('deleted', $building);
 
         $building->delete();
 

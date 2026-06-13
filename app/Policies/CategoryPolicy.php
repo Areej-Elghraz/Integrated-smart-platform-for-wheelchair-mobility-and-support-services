@@ -35,8 +35,11 @@ class CategoryPolicy
             return true;
         }
 
-        if ($user->role === 'companion') {
-            return $user->friends()->wherePivot('status', 'accepted')->where('users.id', $category->owner_id)->exists();
+        if ($user->isCompanion()) {
+            $connectedUser = $user->connectedUserForCompanion;
+            if ($connectedUser && $category->owner_id == $connectedUser->id) {
+                return true;
+            }
         }
 
         return false;
@@ -77,6 +80,15 @@ class CategoryPolicy
                 ->where('organizations.id', $org->id)
                 ->exists();
         }
+
+        // Companion acting on behalf of connected User
+        if ($user->isCompanion()) {
+            $connectedUser = $user->connectedUserForCompanion;
+            if ($connectedUser && $category->owner_id == $connectedUser->id) {
+                return true;
+            }
+        }
+
         return $category->owner_id == $user->id;
     }
 

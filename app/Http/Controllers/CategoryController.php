@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Storage;
 
 class CategoryController extends ApiController
 {
+    use \App\Traits\LogsAdminActions;
+
     protected $categoryService;
 
     public function __construct(CategoryService $categoryService)
@@ -51,7 +53,6 @@ class CategoryController extends ApiController
             message: __('messages.actions.retrieved_success', ['resource' => __('messages.resources.category.plural')]),
             status: 200,
             parameters: $categories
-            // parameters: CategoryResource::collection($categories)->resolve()
         );
     }
 
@@ -67,7 +68,6 @@ class CategoryController extends ApiController
             message: __('messages.actions.retrieved_success', ['resource' => __('messages.resources.category.singular')]),
             status: 200,
             parameters: $category->toArray()
-            // parameters: (new CategoryResource($category))->resolve()
         );
     }
 
@@ -83,11 +83,12 @@ class CategoryController extends ApiController
 
         $category = $this->categoryService->createCategory(auth('sanctum')->user(), $request->validated(), $with, $path ?? null);
         
+        $this->logAdminAction('created', $category, $request->validated());
+
         return $this->successResponse(
             message: __('messages.actions.created_success', ['resource' => __('messages.resources.category.singular')]),
             status: 201,
             parameters: $category
-            // parameters: (new CategoryResource($category))->resolve()
         );
     }
 
@@ -106,17 +107,20 @@ class CategoryController extends ApiController
 
         $category = $this->categoryService->updateCategory($category, auth('sanctum')->user(), $request->validated(), $with, $path ?? null);
         
+        $this->logAdminAction('updated', $category, $request->validated());
+
         return $this->successResponse(
             message: __('messages.actions.updated_success', ['resource' => __('messages.resources.category.singular')]),
             status: 200,
             parameters: $category
-            // parameters: (new CategoryResource($category))->resolve()
         );
     }
 
     public function destroy(Category $category)
     {
         $this->authorize('delete', $category);
+
+        $this->logAdminAction('deleted', $category);
 
         $this->categoryService->deleteCategory($category);
         

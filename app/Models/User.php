@@ -274,6 +274,54 @@ class User extends Authenticatable implements FilamentUser
         return $this->friendsOfMine()->wherePivot('status', 'accepted');
     }
 
+    public function connectionRequestsSent()
+    {
+        return $this->hasMany(ConnectionRequest::class, 'sender_id');
+    }
+
+    public function connectionRequestsReceived()
+    {
+        return $this->hasMany(ConnectionRequest::class, 'receiver_id');
+    }
+
+    // Companion -> User
+    public function getConnectedUserForCompanionAttribute()
+    {
+        $request = $this->connectionRequestsSent()
+            ->where('connection_type', 'companion')
+            ->where('status', 'accepted')
+            ->first();
+        return $request ? $request->receiver : null;
+    }
+
+    // User -> Companions (Multiple companions can follow one user)
+    public function getConnectedCompanionsAttribute()
+    {
+        return User::whereIn('id', ConnectionRequest::where('receiver_id', $this->id)
+            ->where('connection_type', 'companion')
+            ->where('status', 'accepted')
+            ->pluck('sender_id'))->get();
+    }
+
+    // Doctor -> Patients
+    public function getConnectedPatientsAttribute()
+    {
+        return User::whereIn('id', ConnectionRequest::where('receiver_id', $this->id)
+            ->where('connection_type', 'doctor')
+            ->where('status', 'accepted')
+            ->pluck('sender_id'))->get();
+    }
+
+    // User -> Doctor (A user has one doctor)
+    public function getConnectedDoctorAttribute()
+    {
+        $request = $this->connectionRequestsSent()
+            ->where('connection_type', 'doctor')
+            ->where('status', 'accepted')
+            ->first();
+        return $request ? $request->receiver : null;
+    }
+
     /**
      * 3. دالة الصلاحية الخاصة بـ Filament (أضفناها هنا في النهاية)
      * لتسمح للمسؤولين فقط بدخول لوحة الإدارة

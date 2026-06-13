@@ -40,6 +40,15 @@ class Building extends Model
         return $this->belongsTo(Organization::class);
     }
 
+    public function scopeSearch($query, ?string $term)
+    {
+        if (!$term) return $query;
+        return $query->where(function ($q) use ($term) {
+            $q->where('name', 'like', "%{$term}%")
+              ->orWhere('description', 'like', "%{$term}%");
+        });
+    }
+
     public function floors(): HasMany
     {
         return $this->hasMany(Floor::class);

@@ -33,8 +33,11 @@ class PlacePolicy
             return true;
         }
 
-        if ($user->role === 'companion') {
-            return $user->friends()->wherePivot('status', 'accepted')->where('users.id', $place->owner_id)->exists();
+        if ($user->isCompanion()) {
+            $connectedUser = $user->connectedUserForCompanion;
+            if ($connectedUser && $place->owner_id == $connectedUser->id) {
+                return true;
+            }
         }
 
         return false;
@@ -68,6 +71,15 @@ class PlacePolicy
                 && $place->owner_id == $user->id
                 && $place->floor?->building?->organization_id == $org->id;
         }
+        
+        // Companion acting on behalf of connected User
+        if ($user->isCompanion()) {
+            $connectedUser = $user->connectedUserForCompanion;
+            if ($connectedUser && $place->owner_id == $connectedUser->id) {
+                return true;
+            }
+        }
+
         // regular user can update only what they created
         return $place->owner_id == $user->id;
     }
@@ -101,6 +113,6 @@ class PlacePolicy
      */
     public function visit(User $user, Place $place): bool
     {
-        return $user->isUser();
+        return $user->isUser() || $user->isCompanion() || $user->isDoctor();
     }
 }

@@ -111,6 +111,8 @@ class MapController extends ApiController
             $this->logAdminAction('created', $map);
         }
 
+        broadcast(new \App\Events\MapUploaded($map))->toOthers();
+
         return $this->successResponse(
             message: __('messages.actions.created_success', ['resource' => __('messages.resources.map.singular')]),
             status: 201,

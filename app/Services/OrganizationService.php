@@ -170,7 +170,7 @@ class OrganizationService
             'with'    => $with,
         ]));
 
-        // return Cache::tags(['organizations', 'user_' . $user->id])->remember($cacheKey, 3600, function () use ($user, $filters, $with) {
+        // return Cache::remember($cacheKey, 3600, function () use ($user, $filters, $with) {
         //     // if ($user->isUser()) {
         //     //     return Organization::where('owner_id', $user->id)
         //     //         ->orWhereHas('owner', function ($query) {
@@ -190,7 +190,7 @@ class OrganizationService
         //     // return $query->with($with)->get();
         // });
 
-        return Cache::tags(['organizations', 'user_' . $user->id])->remember($cacheKey, 3600, function () use ($user, $filters, $with) {
+        return Cache::remember($cacheKey, 3600, function () use ($user, $filters, $with) {
             $query = Organization::accessibleBy($user)->with($with ?: []);
 
             // if (in_array('categories', $with)) {
@@ -310,12 +310,13 @@ class OrganizationService
     public function clearCache(?User $user)
     {
         if ($user?->isOrganization()) {
-            Cache::tags(['organizations'])->flush();
+            // Cache tags flush removed for database driver compatibility
         }
         if ($user) {
-            Cache::tags(['organizations', 'user_' . $user->id])->flush();
+            // Cache tags flush removed for database driver compatibility
         } else {
-            Cache::tags(['organizations'])->flush();
+            // Cache tags flush removed for database driver compatibility
         }
     }
 }
+

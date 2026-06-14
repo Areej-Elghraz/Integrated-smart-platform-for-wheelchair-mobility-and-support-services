@@ -3,12 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
-class Building extends Model
+class Building extends BaseModel
 {
     use HasFactory;
 
@@ -30,6 +30,7 @@ class Building extends Model
         'name',
         'description',
         'organization_id',
+        'owner_id',
         'image',
         'latitude',
         'longitude',
@@ -38,6 +39,11 @@ class Building extends Model
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'owner_id');
     }
 
     public function scopeSearch($query, ?string $term)

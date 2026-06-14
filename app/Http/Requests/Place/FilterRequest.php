@@ -25,8 +25,6 @@ class FilterRequest extends FormRequest
             'organization_id' => 'sometimes|nullable|exists:organizations,id',
             'category_id'     => 'sometimes|nullable|exists:categories,id',
             // 'owner_id'     => 'sometimes|nullable|exists:users,id',
-            'country_id'      => 'sometimes|nullable|exists:countries,id',
-            'city_id'         => 'sometimes|nullable|exists:cities,id',
             // Date range
             'created_from'    => 'sometimes|date',
             'created_to'      => 'sometimes|date|after_or_equal:created_from',

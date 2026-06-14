@@ -17,7 +17,7 @@ class CountryController extends ApiController
      */
     public function index()
     {
-        $countries = Cache::tags(['countries'])->remember('countries_all', 3600, function () {
+        $countries = Cache::remember('countries_all', 3600, function () {
             return Country::all();
         });
         return $this->successResponse(
@@ -33,7 +33,7 @@ class CountryController extends ApiController
     public function store(StoreCountryRequest $request)
     {
         $country = Country::create($request->validated());
-        Cache::tags(['countries'])->flush();
+        Cache::forget('countries_all');
         return $this->successResponse(
             message: __('messages.actions.created_success', ['resource' => __('messages.resources.country.singular')]),
             status: 201,
@@ -46,7 +46,7 @@ class CountryController extends ApiController
      */
     public function show(Country $country)
     {
-        $countryData = Cache::tags(['countries', "country_{$country->id}"])->remember("country_{$country->id}", 3600, function () use ($country) {
+        $countryData = Cache::remember("country_{$country->id}", 3600, function () use ($country) {
             return $country->toArray();
         });
         return $this->successResponse(
@@ -62,7 +62,8 @@ class CountryController extends ApiController
     public function update(UpdateCountryRequest $request, Country $country)
     {
         $country->update($request->validated());
-        Cache::tags(['countries'])->flush();
+        Cache::forget('countries_all');
+        Cache::forget("country_{$country->id}");
         return $this->successResponse(
             message: __('messages.actions.updated_success', ['resource' => __('messages.resources.country.singular')]),
             status: 200,
@@ -76,7 +77,8 @@ class CountryController extends ApiController
     public function destroy(Country $country)
     {
         $country->delete();
-        Cache::tags(['countries'])->flush();
+        Cache::forget('countries_all');
+        Cache::forget("country_{$country->id}");
         return $this->successResponse(
             message: __('messages.actions.deleted_success', ['resource' => __('messages.resources.country.singular')]),
             status: 200

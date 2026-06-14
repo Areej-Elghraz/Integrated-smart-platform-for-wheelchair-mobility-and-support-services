@@ -3,12 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class City extends Model
+class City extends BaseModel
 {
     use HasFactory;
 
@@ -17,15 +17,9 @@ class City extends Model
         'country_id'
     ];
 
-    protected $hidden = [
-    ];
+    protected $hidden = [];
 
     protected $casts = ['country_id' => 'integer'];
-
-    protected function serializeDate(DateTimeInterface $date)
-    {
-        return $date->format('d M Y - h:i A');
-    }
 
     public function country(): BelongsTo
     {

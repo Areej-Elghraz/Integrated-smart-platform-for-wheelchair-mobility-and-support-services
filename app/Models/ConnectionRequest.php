@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 
-class ConnectionRequest extends Model
+
+class ConnectionRequest extends BaseModel
 {
     protected $fillable = [
         'sender_id',

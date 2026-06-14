@@ -12,14 +12,14 @@ class PostService
 {
     private function clearCache()
     {
-        Cache::tags(['posts'])->flush();
+        // Cache tags flush removed for database driver compatibility
     }
 
     public function getPosts(?User $currentUser, array $filters = [], array $with = []): array
     {
         $cacheKey = 'posts_' . md5(json_encode(['current_user' => $currentUser?->id, 'filters' => $filters, 'with' => $with]));
 
-        return Cache::tags(['posts'])->remember($cacheKey, 3600, function () use ($currentUser, $filters, $with) {
+        return Cache::remember($cacheKey, 3600, function () use ($currentUser, $filters, $with) {
             $query = Post::with($with)
                 ->withCount(['likes', 'comments', 'sharedPosts as shares_count'])
                 ->when(empty($filters['user_id']) && $currentUser, function ($q) use ($currentUser) {

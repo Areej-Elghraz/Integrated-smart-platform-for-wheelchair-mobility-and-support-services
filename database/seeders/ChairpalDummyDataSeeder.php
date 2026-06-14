@@ -152,7 +152,7 @@ class ChairpalDummyDataSeeder extends Seeder
         );
 
         // ── 8. AI Recommendations (Vitals) ──
-        $statuses = ['normal', 'medium', 'critical'];
+        $statuses = ['low', 'medium', 'critical'];
         for ($i = 0; $i < 5; $i++) {
             \App\Models\AiRecommendation::create([
                 'wheelchair_id' => $wheelchair->id,

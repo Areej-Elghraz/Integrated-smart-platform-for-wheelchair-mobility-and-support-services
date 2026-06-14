@@ -79,19 +79,10 @@ class FriendController extends ApiController
         $action = $request->validated()['action'];
         $me = $request->user();
 
-        // // The other user must have sent me a request
-        // $friendship = Friendship::where('user_id', $user->id)
-        //     ->where('friend_id', $me->id)
-        //     ->where('status', 'pending')
-        //     ->first();
-
-        $friendship = Friendship::where(function ($query) use ($me, $user) {
-            $query->where('user_id', $user->id)
-                ->where('friend_id', $me->id);
-        })->orWhere(function ($query) use ($me, $user) {
-            $query->where('user_id', $me->id)
-                ->where('friend_id', $user->id);
-        })
+        // Only the receiver (friend_id) can accept/reject the request.
+        // The sender ($user) must be the one who sent the request (user_id).
+        $friendship = Friendship::where('user_id', $user->id)
+            ->where('friend_id', $me->id)
             ->where('status', 'pending')
             ->first();
 

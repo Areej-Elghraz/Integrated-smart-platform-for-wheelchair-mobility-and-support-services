@@ -6,14 +6,14 @@ use App\Traits\HasOptionalRelations;
 use App\Enums\UserRoleEnum;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 use App\Traits\HasInteractions;
 
-class Organization extends Model
+class Organization extends BaseModel
 {
     use HasFactory, HasOptionalRelations, HasInteractions;
 
@@ -102,11 +102,6 @@ class Organization extends Model
                     $q->where('role', UserRoleEnum::ORGANIZATION->value);
                 });
         });
-    }
-
-    protected function serializeDate(DateTimeInterface $date)
-    {
-        return $date->format('d M Y - h:i A');
     }
 
     public function getImageAttribute($value)

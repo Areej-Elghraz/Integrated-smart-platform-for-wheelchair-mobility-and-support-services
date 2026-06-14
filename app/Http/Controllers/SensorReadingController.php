@@ -28,10 +28,12 @@ class SensorReadingController extends ApiController
     /**
      * Store new sensor readings from the hardware.
      */
-    public function store(StoreSensorReadingRequest $request, $wheelchairId): JsonResponse
+    public function store(StoreSensorReadingRequest $request): JsonResponse
     {
-        $wheelchair = Wheelchair::findOrFail($wheelchairId);
-        $this->authorize('update', $wheelchair);
+        $wheelchair = $request->get('authenticated_wheelchair');
+        if (!$wheelchair) {
+            return $this->errorResponse('Unauthorized wheelchair.', 403);
+        }
 
         $validated = $request->validated();
 

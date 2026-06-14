@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class DeviceStatus extends Model
+class DeviceStatus extends BaseModel
 {
     protected $table = 'device_status';
 

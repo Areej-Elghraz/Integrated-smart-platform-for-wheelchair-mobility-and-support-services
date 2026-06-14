@@ -3,9 +3,9 @@
 namespace App\Models;
 
 use DateTimeInterface;
-use Illuminate\Database\Eloquent\Model;
 
-class Message extends Model
+
+class Message extends BaseModel
 {
     protected static function booted()
     {
@@ -32,11 +32,6 @@ class Message extends Model
         'deleted_by_sender' => 'boolean',
         'deleted_by_receiver' => 'boolean',
     ];
-
-    protected function serializeDate(DateTimeInterface $date)
-    {
-        return $date->format('d M Y - h:i A');
-    }
 
     public function conversation()
     {

@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ObstacleLog extends Model
+class ObstacleLog extends BaseModel
 {
     protected $fillable = [
         'e_chair_id',

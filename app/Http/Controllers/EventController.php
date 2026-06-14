@@ -11,6 +11,33 @@ use Illuminate\Http\JsonResponse;
 class EventController extends ApiController
 {
     /**
+     * Get paginated events for a specific wheelchair.
+     */
+    public function index(\Illuminate\Http\Request $request, $wheelchairId): JsonResponse
+    {
+        $wheelchair = \App\Models\Wheelchair::findOrFail($wheelchairId);
+        $this->authorize('view', $wheelchair);
+
+        $perPage = $request->input('per_page', 50);
+        $type = $request->input('type');
+        $severity = $request->input('severity');
+
+        $query = Event::where('wheelchair_id', $wheelchair->id)->latest('created_at');
+
+        if ($type) {
+            $query->where('type', $type);
+        }
+
+        if ($severity) {
+            $query->where('severity', $severity);
+        }
+
+        $events = $query->paginate($perPage);
+
+        return $this->successResponse('Events retrieved successfully.', parameters: ['data' => $events]);
+    }
+
+    /**
      * Store an event associated with a trip, with deduplication.
      */
     public function storeTripEvent(StoreEventRequest $request): JsonResponse

@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 
-class DecisionTraceLog extends Model
+
+class DecisionTraceLog extends BaseModel
 {
     protected $fillable = [
         'event_type',

@@ -93,7 +93,7 @@ class PlaceController extends ApiController
      */
     public function storeForFloor(Floor $floor, StoreRequest $request)
     {
-        $this->authorize('update', $floor);
+        $this->authorize('view', $floor); // changed from update to view to allow users to add places to global floors
 
         $with = $this->relationships($request->query('include', ''), auth('sanctum')->user());
 
@@ -102,12 +102,9 @@ class PlaceController extends ApiController
             $path = $request->file('image')->store('places', 'public');
         }
 
-        // Merge floor_id and map_id from the URL context
+        // Merge floor_id from the URL context
         $data = $request->validated();
         $data['floor_id'] = $floor->id;
-        if ($floor->map) {
-            $data['map_id'] = $floor->map->id;
-        }
 
         $place = $this->placeService->createPlace(auth('sanctum')->user(), $data, $path, $with);
         $place->load('floor');

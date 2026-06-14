@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 
-class IncidentReport extends Model
+
+class IncidentReport extends BaseModel
 {
     protected $fillable = [
         'event_type',

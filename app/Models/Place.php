@@ -5,12 +5,12 @@ namespace App\Models;
 use App\Enums\UserRoleEnum;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 use App\Traits\HasInteractions;
 
-class Place extends Model
+class Place extends BaseModel
 {
     use HasFactory, HasInteractions;
 
@@ -27,13 +27,9 @@ class Place extends Model
         'name',
         'description',
         'parent_place_id',
-        'country_id',
-        'city_id',
-        'owner_id',
         'image',
         'accessibility_data',
         'floor_id',
-        'map_id',
         'points',
         'x',
         'y',
@@ -46,8 +42,6 @@ class Place extends Model
     protected $hidden = [
         'owner_id',
         'parent_place_id',
-        'country_id',
-        'city_id',
         'pivot',
     ];
 
@@ -56,17 +50,14 @@ class Place extends Model
         'points'             => 'array',
         'owner_id'           => 'integer',
         'parent_place_id'    => 'integer',
-        'country_id'         => 'integer',
-        'city_id'            => 'integer',
         'floor_id'           => 'integer',
-        'map_id'             => 'integer',
         'x'                  => 'double',
         'y'                  => 'double',
         'z'                  => 'double',
         'rotation'           => 'double',
     ];
 
-    protected $appends = ['rating', 'rating_distribution', 'top_reviews', 'is_favorite', 'top_visitors', 'visitorsCount', 'average_rating'];
+    protected $appends = ['rating', 'rating_distribution', 'top_reviews', 'is_favorite', 'top_visitors', 'visitorsCount', 'average_rating', 'country', 'city'];
 
     public const ALLOWED_RELATIONS = [
         'owner',
@@ -76,8 +67,6 @@ class Place extends Model
         'categories.children',
         'categories.organizations',
         'categories.places',
-        'country',
-        'city',
         'reviews',
         'favoritedBy',
         'visitors',
@@ -88,7 +77,6 @@ class Place extends Model
         'floor.map',
         'floor.building',
         'floor.building.organization',
-        'map',
     ];
 
     public function scopeSearch($query, ?string $term)
@@ -116,11 +104,6 @@ class Place extends Model
                     $q->where('role', UserRoleEnum::ORGANIZATION->value);
                 });
         });
-    }
-
-    protected function serializeDate(DateTimeInterface $date)
-    {
-        return $date->format('d M Y - h:i A');
     }
 
     public function getImageAttribute($value)
@@ -151,17 +134,17 @@ class Place extends Model
     /**
      * Get Country via Organization.
      */
-    public function country(): BelongsTo
+    public function getCountryAttribute()
     {
-        return $this->belongsTo(Country::class);
+        return $this->floor?->building?->organization?->country;
     }
 
     /**
      * Get City via Organization.
      */
-    public function city(): BelongsTo
+    public function getCityAttribute()
     {
-        return $this->belongsTo(City::class);
+        return $this->floor?->building?->organization?->city;
     }
 
     // Protected by HasInteractions trait
@@ -228,9 +211,5 @@ class Place extends Model
     public function floor(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Floor::class, 'floor_id');
-    }
-    public function map(): \Illuminate\Database\Eloquent\Relations\BelongsTo
-    {
-        return $this->belongsTo(Floor::class, 'map_id');
     }
 }

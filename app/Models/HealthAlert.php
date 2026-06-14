@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class HealthAlert extends Model
+class HealthAlert extends BaseModel
 {
     protected $fillable = [
         'health_prediction_id',

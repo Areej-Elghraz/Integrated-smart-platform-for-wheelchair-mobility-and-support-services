@@ -16,7 +16,7 @@ class MessageController extends ApiController
     {
         $userId = $request->user()->id;
         $cacheKey = "chat_sessions_user_{$userId}";
-        $sessions = Cache::tags(["chat_sessions", $cacheKey])->remember($cacheKey, 3600, function () use ($request) {
+        $sessions = Cache::remember($cacheKey, 3600, function () use ($request) {
             return $request->user()->chatSessions()->latest()->get();
         });
         return response()->json(['data' => $sessions]);
@@ -32,7 +32,7 @@ class MessageController extends ApiController
             'title' => $request->input('title', 'New Chat'),
         ]);
 
-        Cache::tags(["chat_sessions", "chat_sessions_user_{$request->user()->id}"])->flush();
+        Cache::forget("chat_sessions_user_{$request->user()->id}");
 
         return response()->json(['message' => __('messages.chat_session_created'), 'data' => $session], 201);
     }
@@ -54,7 +54,7 @@ class MessageController extends ApiController
         }
 
         $session->delete();
-        Cache::tags(["chat_sessions", "chat_sessions_user_{$request->user()->id}"])->flush();
+        Cache::forget("chat_sessions_user_{$request->user()->id}");
         return response()->json(['message' => __('messages.chat_session_deleted')]);
     }
 

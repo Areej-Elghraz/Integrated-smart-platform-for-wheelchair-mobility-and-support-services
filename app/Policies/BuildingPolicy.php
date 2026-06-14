@@ -18,7 +18,29 @@ class BuildingPolicy
         if (!$building->organization) {
             return true;
         }
-        return $user->can('view', $building->organization);
+
+        // Must be able to view the organization first
+        if (!$user->can('view', $building->organization)) {
+            return false;
+        }
+
+        // Global organization (Admin's organization)
+        if (is_null($building->organization->owner_id)) {
+            // System Admin's building (null) or user's own building
+            if (is_null($building->owner_id) || $building->owner_id == $user->id) {
+                return true;
+            }
+            // Companion check
+            if ($user->isCompanion()) {
+                $connectedUser = $user->connectedUserForCompanion;
+                if ($connectedUser && $building->owner_id == $connectedUser->id) {
+                    return true;
+                }
+            }
+            return false; // Can't view other users' private buildings in a global org
+        }
+
+        return true; // For private organizations, view is handled by org policy
     }
 
     /**
@@ -26,7 +48,11 @@ class BuildingPolicy
      */
     public function create(User $user, $parent): bool
     {
-        return $user->can('update', $parent);
+        if ($user->isDoctor()) return false;
+        
+        // Anyone can create a building if they can view the organization.
+        // For Global orgs, it will be saved with their owner_id.
+        return $user->can('view', $parent);
     }
 
     /**
@@ -34,10 +60,34 @@ class BuildingPolicy
      */
     public function update(User $user, Building $building): bool
     {
-        if (!$building->organization) {
-            return false;
+        if ($user->isDoctor()) return false;
+
+        // If they own the building, they can update it
+        if ($building->owner_id == $user->id) {
+            return true;
         }
-        return $user->can('update', $building->organization);
+
+        // Companion acting on behalf of connected User
+        if ($user->isCompanion()) {
+            $connectedUser = $user->connectedUserForCompanion;
+            if ($connectedUser && $building->owner_id == $connectedUser->id) {
+                return true;
+            }
+        }
+
+        // If it's a global building (owner_id is null) in a global org, only system admin can update it.
+        // If it's an organization admin, they own their org, so check if they can update the org.
+        if (is_null($building->owner_id)) {
+            if ($user->isAdmin() || $user->role === \App\Enums\UserRoleEnum::SUPER_ADMIN->value) {
+                return true;
+            }
+        }
+
+        if ($building->organization) {
+            return $user->can('update', $building->organization);
+        }
+
+        return false;
     }
 
     /**

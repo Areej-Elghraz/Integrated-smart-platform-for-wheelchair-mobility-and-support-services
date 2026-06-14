@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+
 use DateTimeInterface;
 
-class Review extends Model
+class Review extends BaseModel
 {
     protected $fillable = ['user_id', 'reviewable_id', 'reviewable_type', 'rating', 'comment'];
 
@@ -19,11 +19,6 @@ class Review extends Model
         'user',
         'reviewable',
     ];
-
-    protected function serializeDate(DateTimeInterface $date)
-    {
-        return $date->format('d M Y - h:i A');
-    }
 
     public function user()
     {

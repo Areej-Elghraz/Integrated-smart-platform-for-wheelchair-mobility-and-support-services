@@ -3,9 +3,9 @@
 namespace App\Models;
 
 use DateTimeInterface;
-use Illuminate\Database\Eloquent\Model;
 
-class Post extends Model
+
+class Post extends BaseModel
 {
     protected static function booted()
     {
@@ -48,11 +48,6 @@ class Post extends Model
         'images' => 'array',
         'files' => 'array',
     ];
-
-    protected function serializeDate(DateTimeInterface $date)
-    {
-        return $date->format('d M Y - h:i A');
-    }
 
     public function user()
     {
@@ -99,5 +94,4 @@ class Post extends Model
         $files = is_array($value) ? $value : json_decode($value, true);
         return array_map(fn($file) => asset('storage/' . $file), $files);
     }
-
 }

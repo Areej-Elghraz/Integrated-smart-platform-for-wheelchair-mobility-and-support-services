@@ -17,7 +17,7 @@ class CityController extends ApiController
      */
     public function index()
     {
-        $cities = Cache::tags(['cities'])->remember('cities_all', 3600, function () {
+        $cities = Cache::remember('cities_all', 3600, function () {
             return City::with('country')->get();
         });
         return $this->successResponse(
@@ -33,7 +33,7 @@ class CityController extends ApiController
     public function store(StoreCityRequest $request)
     {
         $city = City::create($request->validated());
-        Cache::tags(['cities'])->flush();
+        Cache::forget('cities_all');
         return $this->successResponse(
             message: __('messages.actions.created_success', ['resource' => __('messages.resources.city.singular')]),
             status: 201,
@@ -46,7 +46,7 @@ class CityController extends ApiController
      */
     public function show(City $city)
     {
-        $cityData = Cache::tags(['cities', "city_{$city->id}"])->remember("city_{$city->id}", 3600, function () use ($city) {
+        $cityData = Cache::remember("city_{$city->id}", 3600, function () use ($city) {
             return $city->toArray();
         });
         return $this->successResponse(
@@ -62,7 +62,8 @@ class CityController extends ApiController
     public function update(UpdateCityRequest $request, City $city)
     {
         $city->update($request->validated());
-        Cache::tags(['cities'])->flush();
+        Cache::forget('cities_all');
+        Cache::forget("city_{$city->id}");
         return $this->successResponse(
             message: __('messages.actions.updated_success', ['resource' => __('messages.resources.city.singular')]),
             status: 200,
@@ -76,7 +77,7 @@ class CityController extends ApiController
     public function destroy(City $city)
     {
         $city->delete();
-        Cache::tags(['cities'])->flush();
+        Cache::forget('cities_all');
         return $this->successResponse(
             message: __('messages.actions.deleted_success', ['resource' => __('messages.resources.city.singular')]),
             status: 200

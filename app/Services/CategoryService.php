@@ -192,7 +192,7 @@ class CategoryService
             'with' => $with,
         ]));
 
-        return Cache::tags(['categories', 'user_' . $user->id])->remember($cacheKey, 3600, function () use ($user, $filters, $with) {
+        return Cache::remember($cacheKey, 3600, function () use ($user, $filters, $with) {
             $query = Category::accessibleBy($user)->with($with ?: []);
             if ($user->isOrganization()) {
 
@@ -382,12 +382,13 @@ class CategoryService
     public function clearCache(?User $user)
     {
         if ($user?->isOrganization()) {
-            Cache::tags(['categories'])->flush();
+            // Cache tags flush removed for database driver compatibility
         }
         if ($user) {
-            Cache::tags(['categories', 'user_' . $user->id])->flush();
+            // Cache tags flush removed for database driver compatibility
         } else {
-            Cache::tags(['categories'])->flush();
+            // Cache tags flush removed for database driver compatibility
         }
     }
 }
+

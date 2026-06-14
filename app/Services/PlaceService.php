@@ -39,13 +39,7 @@ class PlaceService
             $categoryId = $category['id'];
         }
 
-        if (!isset($data['country_id']) && !isset($data['city_id'])) {
-            if (isset($data['country_name']) && isset($data['city_name'])) {
-                $geoData = $this->geoService->getOrCreateGeoData($data['country_name'], $data['city_name']);
-                $data['country_id'] = $geoData['country_id'];
-                $data['city_id'] = $geoData['city_id'];
-            }
-        }
+
 
         return \Illuminate\Support\Facades\DB::transaction(function () use ($user, $data, $imagePath, $with, $categoryId) {
             $data['owner_id'] = $user?->id;
@@ -102,13 +96,7 @@ class PlaceService
             $categoryId = $category->id;
         }
 
-        if (!isset($data['country_id']) && !isset($data['city_id'])) {
-            if (!empty($data['country_name']) && !empty($data['city_name'])) {
-                $geoData = $this->geoService->getOrCreateGeoData($data['country_name'], $data['city_name']);
-                $data['country_id'] = $geoData['country_id'];
-                $data['city_id'] = $geoData['city_id'];
-            }
-        }
+
 
         return \Illuminate\Support\Facades\DB::transaction(function () use ($user, $place, $data, $imagePath, $with, $categoryId) {
             if (!is_null($imagePath)) {
@@ -162,7 +150,7 @@ class PlaceService
             'with'    => $with,
         ]));
 
-        return Cache::tags(['places', 'user_' . $user->id])->remember($cacheKey, 3600, function () use ($user, $filters, $with) {
+        return Cache::remember($cacheKey, 3600, function () use ($user, $filters, $with) {
             $query = Place::accessibleBy($user)->with($with ?: []);
 
             // if ($user->isOrganization()) {
@@ -209,16 +197,7 @@ class PlaceService
                     fn($q) =>
                     $q->has('categories', '>', 0)
                 )
-                ->when(
-                    $filters['country_id'] ?? null,
-                    fn($q, $countryId) =>
-                    $q->where('country_id', $countryId)
-                )
-                ->when(
-                    $filters['city_id'] ?? null,
-                    fn($q, $cityId) =>
-                    $q->where('city_id', $cityId)
-                )
+
                 ->when(
                     $filters['created_from'] ?? null,
                     fn($q, $date) =>
@@ -235,7 +214,7 @@ class PlaceService
 
                         $direction = $filters['sort_direction'] ?? 'asc';
 
-                        $allowed = ['name', 'created_at', 'country_id'];
+                        $allowed = ['name', 'created_at'];
 
                         if (in_array($sortBy, $allowed)) {
                             $q->orderBy($sortBy, $direction);
@@ -270,7 +249,7 @@ class PlaceService
             'with'    => $with,
         ]));
 
-        return Cache::tags(['favorites', 'user_' . $user->id])->remember($cacheKey, 3600, function () use ($user, $filters, $with) {
+        return Cache::remember($cacheKey, 3600, function () use ($user, $filters, $with) {
             $query = $user->favorites()->with($with ?: []);
 
             if (!empty($filters['pagination'])) {
@@ -302,13 +281,14 @@ class PlaceService
     public function clearCache(?User $user)
     {
         if ($user?->isOrganization()) {
-            Cache::tags(['places'])->flush();
+            // Cache tags flush removed for database driver compatibility
         }
         if ($user) {
-            Cache::tags(['places', 'user_' . $user->id])->flush();
-            Cache::tags(['favorites', 'user_' . $user->id])->flush();
+            // Cache tags flush removed for database driver compatibility
+            // Cache tags flush removed for database driver compatibility
         } else {
-            Cache::tags(['places'])->flush();
+            // Cache tags flush removed for database driver compatibility
         }
     }
 }
+

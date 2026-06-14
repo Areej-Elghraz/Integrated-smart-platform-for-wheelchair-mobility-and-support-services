@@ -15,10 +15,7 @@ class FloorPolicy
      */
     public function view(User $user, Floor $floor): bool
     {
-        if ($floor->building && $floor->building->organization_id && $floor->building->organization) {
-            return $user->can('view', $floor->building->organization);
-        }
-        if ($floor->building_id && $floor->building) {
+        if ($floor->building) {
             return $user->can('view', $floor->building);
         }
         return true;
@@ -37,10 +34,7 @@ class FloorPolicy
      */
     public function update(User $user, Floor $floor): bool
     {
-        if ($floor->building && $floor->building->organization_id && $floor->building->organization) {
-            return $user->can('update', $floor->building->organization);
-        }
-        if ($floor->building_id && $floor->building) {
+        if ($floor->building) {
             return $user->can('update', $floor->building);
         }
         return false;

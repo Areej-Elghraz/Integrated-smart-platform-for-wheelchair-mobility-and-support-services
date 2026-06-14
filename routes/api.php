@@ -39,6 +39,7 @@ Route::post('/support', [\App\Http\Controllers\SupportController::class, 'store'
 Route::middleware(['auth:sanctum', 'ability:' . TokenAbilityEnum::ACCESS_TOKEN->value, 'verified_user'])->group(function () {
   // authentication
   Route::post('/logout', LogoutController::class)->name('auth.logout');
+  Route::get('/profile', [\App\Http\Controllers\Profile\ProfileController::class, 'show'])->name('auth.profile.show');
   Route::put('/profile/update', UpdateDataController::class)->name('auth.profile.updata_data');
   Route::put('/profile/change-password', ChangePasswordController::class)->name('auth.profile.change_password');
   Route::delete('/profile', [\App\Http\Controllers\Profile\DeleteAccountController::class, 'destroy'])->name('profile.destroy');
@@ -89,15 +90,21 @@ Route::middleware(['auth:sanctum', 'ability:' . TokenAbilityEnum::ACCESS_TOKEN->
 
 
   // Wheelchairs
+  Route::get('/wheelchairs/current', [\App\Http\Controllers\WheelchairController::class, 'current'])->name('wheelchairs.current');
+  Route::get('/wheelchairs/mapping-permission', [\App\Http\Controllers\WheelchairController::class, 'checkMappingPermission'])->name('wheelchairs.mapping_permission');
   Route::post('/wheelchairs/connect', [\App\Http\Controllers\WheelchairController::class, 'connect'])->name('wheelchairs.connect');
   Route::post('/wheelchairs/{wheelchairId}/disconnect', [\App\Http\Controllers\WheelchairController::class, 'disconnect'])->name('wheelchairs.disconnect');
-  Route::put('/wheelchairs/{wheelchairId}', [\App\Http\Controllers\WheelchairController::class, 'update'])->name('wheelchairs.update');
   Route::post('/wheelchairs/{wheelchairId}/unassign', [\App\Http\Controllers\WheelchairController::class, 'unassign'])->name('wheelchairs.unassign');
 
-  Route::get('/wheelchairs/{wheelchairId}/vitals', [\App\Http\Controllers\WheelchairController::class, 'showVitals'])->name('wheelchairs.show_vitals');
+  Route::get('/wheelchairs/{wheelchairId}/health', [\App\Http\Controllers\WheelchairController::class, 'showVitals'])->name('wheelchairs.show_vitals');
 
   Route::get('/wheelchairs/{wheelchairId}/sensor-readings', [\App\Http\Controllers\SensorReadingController::class, 'index'])->name('sensor_readings.index');
-  Route::post('/wheelchairs/{wheelchairId}/sensor-readings', [\App\Http\Controllers\SensorReadingController::class, 'store'])->name('sensor_readings.store');
+  Route::get('/wheelchairs/{wheelchairId}/events', [\App\Http\Controllers\EventController::class, 'index'])->name('wheelchairs.events.index');
+
+  // Notifications
+  Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+  Route::put('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark_all_read');
+  Route::put('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark_read');
 
 
   // Community
@@ -168,4 +175,6 @@ Route::middleware(['verify_wheelchair_api_key'])->group(function () {
   Route::post('/trip/movement/update', [\App\Http\Controllers\TripController::class, 'updateMovementStatus'])->name('iot.trip.movement.update');
   Route::post('/trip/events', [\App\Http\Controllers\EventController::class, 'storeTripEvent'])->name('iot.trip.events.store');
   Route::post('/wheelchair/health', [\App\Http\Controllers\WheelchairController::class, 'updateCurrentVitalState'])->name('iot.wheelchair.health.update');
+  Route::post('/iot/floors/{floor}/map', [\App\Http\Controllers\IoT\MapController::class, 'store'])->name('iot.maps.store');
+  Route::post('/iot/sensor-readings', [\App\Http\Controllers\SensorReadingController::class, 'store'])->name('iot.sensor_readings.store');
 });

@@ -11,19 +11,37 @@ class UpdateMovementStateRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation()
+    {
+        if ($this->has('position') && is_string($this->position)) {
+            $position = json_decode($this->position, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $this->merge([
+                    'position' => $position,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, ValidationRule|array<mixed>|string>
+     */
     public function rules(): array
     {
         return [
-            'movement_status'   => 'required|string|in:moving,idle',
-            'speed'             => 'required|numeric|min:0',
-            'position'          => 'required|array',
-            'position.x'        => 'required|numeric',
-            'position.y'        => 'required|numeric',
-            'theta'             => 'required|numeric|min:-360|max:360',
-            'mode'              => 'required|string|in:autonomous,manual',
-            'risk_level'        => 'required|string|in:low,medium,high',
+            'trip_id' => 'nullable|exists:trips,id',
+            'movement_status' => 'required|string|in:moving,idle',
+            'speed' => 'required|numeric',
+            'position' => 'required|array',
+            'position.x' => 'required|numeric',
+            'position.y' => 'required|numeric',
+            'theta' => 'required|numeric',
+            'mode' => 'required|string|in:autonomous,manual',
+            'risk_level' => 'required|string|in:low,medium,high',
             'obstacle_detected' => 'required|boolean',
-            'obstacle_distance' => 'required|numeric|min:0',
+            'obstacle_distance' => 'required|numeric',
         ];
     }
 

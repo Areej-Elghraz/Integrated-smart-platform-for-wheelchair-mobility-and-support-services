@@ -6,6 +6,7 @@ use App\Models\Trip;
 use App\Models\Wheelchair;
 use App\Events\TripUpdated;
 use App\Events\TripMovementStatusUpdated;
+use App\Http\Requests\Trip\UpdateMovementStateRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -77,21 +78,9 @@ class TripController extends ApiController
         return $this->successResponse('Movement state retrieved.', parameters: ['data' => $trip->movementState]);
     }
 
-    public function updateMovementStatus(Request $request): JsonResponse
+    public function updateMovementStatus(UpdateMovementStateRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'trip_id' => 'nullable|exists:trips,id',
-            'movement_status' => 'required|string|in:moving,idle',
-            'speed' => 'required|numeric',
-            'position' => 'required|array',
-            'position.x' => 'required|numeric',
-            'position.y' => 'required|numeric',
-            'theta' => 'required|numeric',
-            'mode' => 'required|string|in:autonomous,manual',
-            'risk_level' => 'required|string|in:low,medium,high',
-            'obstacle_detected' => 'required|boolean',
-            'obstacle_distance' => 'required|numeric',
-        ]);
+        $validated = $request->validated();
 
         $wheelchair = $request->get('authenticated_wheelchair');
         if (!$wheelchair) {

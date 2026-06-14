@@ -13,9 +13,9 @@ class ChatService
 {
     public function clearCache(int $userId, int $partnerId = null)
     {
-        Cache::tags(["chats_user_{$userId}"])->flush();
+        // Cache tags flush removed for database driver compatibility
         if ($partnerId) {
-            Cache::tags(["chats_user_{$partnerId}"])->flush();
+            // Cache tags flush removed for database driver compatibility
         }
     }
 
@@ -27,7 +27,7 @@ class ChatService
 
         $cacheKey = 'conversations_' . md5(json_encode($filters));
 
-        return Cache::tags(["chats_user_{$userId}"])->remember($cacheKey, 3600, function () use ($userId, $search, $filter, $filters) {
+        return Cache::remember($cacheKey, 3600, function () use ($userId, $search, $filter, $filters) {
             $query = Conversation::where(function ($q) use ($userId) {
                 $q->where(function ($sub) use ($userId) {
                     $sub->where('user_one_id', $userId)->where('deleted_by_user_one', false);
@@ -107,7 +107,7 @@ class ChatService
 
         $cacheKey = 'messages_' . $conversation->id . '_' . md5(json_encode($filters));
 
-        return Cache::tags(["chats_user_{$userId}", "chats_user_{$partnerId}"])->remember($cacheKey, 3600, function () use ($conversation, $filters, $userId) {
+        return Cache::remember($cacheKey, 3600, function () use ($conversation, $filters, $userId) {
             $paginator = $conversation->messages()
                 ->where(function ($q) use ($userId) {
                     $q

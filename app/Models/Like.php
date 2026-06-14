@@ -3,16 +3,11 @@
 namespace App\Models;
 
 use DateTimeInterface;
-use Illuminate\Database\Eloquent\Model;
 
-class Like extends Model
+
+class Like extends BaseModel
 {
     protected $fillable = ['user_id', 'likeable_id', 'likeable_type'];
-
-    protected function serializeDate(DateTimeInterface $date)
-    {
-        return $date->format('d M Y - h:i A');
-    }
 
     public function user()
     {

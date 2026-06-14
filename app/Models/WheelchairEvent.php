@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class WheelchairEvent extends Model
+class WheelchairEvent extends BaseModel
 {
     protected $fillable = [
         'e_chair_id',

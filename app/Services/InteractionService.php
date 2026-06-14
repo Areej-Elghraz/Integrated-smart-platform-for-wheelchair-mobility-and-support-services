@@ -80,7 +80,7 @@ class InteractionService
         $entityType = strtolower(class_basename($model));
         $cacheKey = "{$entityType}_{$model->id}_comments_" . md5(json_encode($filters));
 
-        return Cache::tags([$entityType . 's', "{$entityType}_{$model->id}"])->remember($cacheKey, 3600, function () use ($model, $filters) {
+        return Cache::remember($cacheKey, 3600, function () use ($model, $filters) {
             $query = \App\Models\Comment::query()
                 ->where('commentable_id', $model->id)
                 ->where('commentable_type', get_class($model))
@@ -130,8 +130,8 @@ class InteractionService
         $entityType = strtolower(class_basename($model));
         $tags = [$entityType . 's', 'user_' . $user->id];
 
-        Cache::tags($tags)->flush();
-        Cache::tags(['favorites', 'user_' . $user->id])->flush();
+        // Cache tags flush removed for database driver compatibility
+        // Cache tags flush removed for database driver compatibility
     }
 
     /**
@@ -143,3 +143,4 @@ class InteractionService
         return 'favorite' . $basename . 's'; // e.g., favoritePlaces, favoriteOrganizations
     }
 }
+

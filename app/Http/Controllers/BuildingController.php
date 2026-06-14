@@ -23,6 +23,13 @@ class BuildingController extends ApiController
         $this->authorize('view', $organization);
 
         $buildings = $organization->buildings()
+            ->when(is_null($organization->owner_id), function ($query) use ($request) {
+                // For global organizations, only show admin buildings (null) or user's buildings
+                $query->where(function ($q) use ($request) {
+                    $q->whereNull('owner_id')
+                      ->orWhere('owner_id', $request->user()->id);
+                });
+            })
             ->search($request->input('search'))
             ->with(['floors', 'floors.map'])
             ->get();
@@ -39,11 +46,19 @@ class BuildingController extends ApiController
      */
     public function storeForOrganization(Organization $organization, StoreBuildingRequest $request)
     {
-        $this->authorize('update', $organization);
+        $this->authorize('create', [Building::class, $organization]);
 
         $data = $request->validated();
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('buildings', 'public');
+        }
+
+        if ($request->user()->isOrganization()) {
+            $data['owner_id'] = $request->user()->id;
+        } elseif ($request->user()->isAdmin() || $request->user()->role === \App\Enums\UserRoleEnum::SUPER_ADMIN->value) {
+            $data['owner_id'] = null; // Admin
+        } else {
+            $data['owner_id'] = $request->user()->id; // Normal user
         }
 
         $building = $organization->buildings()->create($data);

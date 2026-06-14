@@ -17,6 +17,91 @@ use Illuminate\Support\Facades\Auth;
 class WheelchairController extends ApiController
 {
     /**
+     * Get the current connected wheelchair(s) for the user.
+     */
+    public function current(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+
+        if (in_array($user->role, ['companion', 'doctor'])) {
+            $patientIds = $user->friends()->wherePivot('status', 'accepted')->pluck('users.id');
+            $wheelchairs = Wheelchair::whereIn('user_id', $patientIds)
+                ->where('connection_state', 'online')
+                ->get();
+
+            return $this->successResponse('Current wheelchairs retrieved successfully.', parameters: ['data' => $wheelchairs]);
+        }
+
+        $wheelchair = Wheelchair::where('user_id', $user->id)
+            ->where('connection_state', 'online')
+            ->first();
+
+        if (!$wheelchair) {
+            return $this->errorResponse('No active wheelchair found.', 404);
+        }
+
+        return $this->successResponse('Current wheelchair retrieved successfully.', parameters: ['data' => $wheelchair]);
+    }
+
+    /**
+     * Check if the current user has permission to create/update a map via their wheelchair.
+     */
+    public function checkMappingPermission(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+
+        // Validate that floor_id is required
+        $request->validate([
+            'floor_id' => 'required|integer|exists:floors,id',
+        ]);
+
+        $floorId = $request->input('floor_id');
+        $floor = \App\Models\Floor::with('building.organization')->find($floorId);
+
+        // 1. Check if user has an active connected wheelchair
+        $wheelchair = Wheelchair::where('user_id', $user->id)
+            ->where('connection_state', 'online')
+            ->first();
+
+        if (!$wheelchair) {
+            return $this->successResponse('Mapping permission check.', parameters: [
+                'data' => [
+                    'can_map' => false,
+                    'wheelchair_id' => null,
+                    'reason' => 'No active wheelchair connected.',
+                ]
+            ]);
+        }
+
+        $canMap = false;
+        $reason = 'User does not have permission to map this floor.';
+
+        // Super Admin check
+        if ($user->role === \App\Enums\UserRoleEnum::SUPER_ADMIN->value) {
+            $canMap = true;
+            $reason = 'Super admin has access to all floors.';
+        } else {
+            $buildingOwnerId = $floor->building->owner_id ?? null;
+            $orgOwnerId = $floor->building->organization->owner_id ?? null;
+
+            if ($buildingOwnerId === $user->id) {
+                $canMap = true;
+                $reason = 'User is the owner of the building for this floor.';
+            } elseif ($orgOwnerId === $user->id) {
+                $canMap = true;
+                $reason = 'User is the owner of the organization for this floor.';
+            }
+        }
+
+        return $this->successResponse('Mapping permission check.', parameters: [
+            'data' => [
+                'can_map' => $canMap,
+                'wheelchair_id' => $wheelchair->id,
+                'reason' => $reason,
+            ]
+        ]);
+    }
+    /**
      * Connect a wheelchair.
      */
     public function connect(Request $request): JsonResponse
@@ -100,23 +185,7 @@ class WheelchairController extends ApiController
         return $this->successResponse('Wheelchair disconnected successfully.', parameters: ['data' => $wheelchair]);
     }
 
-    /**
-     * Update wheelchair data (battery, voltage, etc).
-     */
-    public function update(\App\Http\Requests\Wheelchair\UpdateWheelchairRequest $request, $wheelchairId): JsonResponse
-    {
-        $wheelchair = Wheelchair::findOrFail($wheelchairId);
 
-        $this->authorize('update', $wheelchair);
-
-        $validated = $request->validated();
-
-        $wheelchair->update($validated);
-
-        broadcast(new WheelchairUpdated($wheelchair));
-
-        return $this->successResponse('Wheelchair updated successfully.', parameters: ['data' => $wheelchair]);
-    }
 
     /**
      * Unassign a wheelchair from the user.
@@ -156,13 +225,13 @@ class WheelchairController extends ApiController
         $validated = $request->validate([
             'trip_id' => 'nullable|exists:trips,id',
             'heart_rate' => 'required|numeric',
-            'heart_rate_status' => 'required|string|in:normal,medium,critical',
+            'heart_rate_status' => 'required|string|in:low,medium,critical',
             'temperature' => 'required|numeric',
-            'temperature_status' => 'required|string|in:normal,medium,critical',
+            'temperature_status' => 'required|string|in:low,medium,critical',
             'mpu_angle' => 'required|numeric',
-            'fall_status' => 'required|string|in:normal,medium,critical',
+            'fall_status' => 'required|string|in:low,medium,critical',
             'type' => 'nullable|string',
-            'risk_level' => 'required|string|in:normal,medium,critical',
+            'risk_level' => 'required|string|in:low,medium,critical',
             'reason' => 'nullable|string',
             'recommendation' => 'nullable|string',
         ]);
@@ -201,7 +270,7 @@ class WheelchairController extends ApiController
                 if ($user) {
                     $companions = collect($user->connectedCompanions);
                     $doctor = $user->connectedDoctor;
-                    
+
                     $allConnected = $companions;
                     if ($doctor) {
                         $allConnected->push($doctor);

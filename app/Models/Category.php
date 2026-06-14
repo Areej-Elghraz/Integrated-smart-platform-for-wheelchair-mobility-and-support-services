@@ -6,12 +6,12 @@ use App\Traits\HasOptionalRelations;
 use App\Enums\UserRoleEnum;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Category extends Model
+class Category extends BaseModel
 {
     use HasFactory, HasOptionalRelations;
 
@@ -90,11 +90,6 @@ class Category extends Model
                 })
             ;
         });
-    }
-
-    protected function serializeDate(DateTimeInterface $date)
-    {
-        return $date->format('d M Y - h:i A');
     }
 
     public function getImageAttribute($value)

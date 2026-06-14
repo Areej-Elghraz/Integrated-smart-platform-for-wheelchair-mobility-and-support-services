@@ -3,9 +3,9 @@
 namespace App\Models;
 
 use DateTimeInterface;
-use Illuminate\Database\Eloquent\Model;
 
-class Conversation extends Model
+
+class Conversation extends BaseModel
 {
     protected $fillable = ['user_one_id', 'user_two_id', 'deleted_by_user_one', 'deleted_by_user_two'];
 
@@ -13,11 +13,6 @@ class Conversation extends Model
         'deleted_by_user_one' => 'boolean',
         'deleted_by_user_two' => 'boolean',
     ];
-
-    protected function serializeDate(DateTimeInterface $date)
-    {
-        return $date->format('d M Y - h:i A');
-    }
 
     public function userOne()
     {

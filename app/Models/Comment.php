@@ -3,16 +3,11 @@
 namespace App\Models;
 
 use DateTimeInterface;
-use Illuminate\Database\Eloquent\Model;
 
-class Comment extends Model
+
+class Comment extends BaseModel
 {
     protected $fillable = ['user_id', 'commentable_id', 'commentable_type', 'content', 'parent_id'];
-
-    protected function serializeDate(DateTimeInterface $date)
-    {
-        return $date->format('d M Y - h:i A');
-    }
 
     public function commentable()
     {

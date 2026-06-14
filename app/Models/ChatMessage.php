@@ -4,10 +4,10 @@ namespace App\Models;
 
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ChatMessage extends Model
+class ChatMessage extends BaseModel
 {
     use HasFactory;
 
@@ -41,11 +41,6 @@ class ChatMessage extends Model
         return [
             'attachments' => 'array',
         ];
-    }
-
-    protected function serializeDate(DateTimeInterface $date)
-    {
-        return $date->format('d M Y - h:i A');
     }
 
     public function session(): BelongsTo

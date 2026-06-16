@@ -37,9 +37,14 @@ class SensorReadingController extends ApiController
 
         $validated = $request->validated();
 
-        $reading = SensorReading::create([
+        // Auto-detect active trip
+        $activeTrip = \App\Models\Trip::where('wheelchair_id', $wheelchair->id)
+            ->where('status', 'started')
+            ->first();
+
+        $readingData = [
             'wheelchair_id'   => $wheelchair->id,
-            'trip_id'         => $validated['trip_id'] ?? null,
+            'trip_id'         => $activeTrip ? $activeTrip->id : null,
             'heart_rate_min'  => $validated['heart_rate_min'] ?? null,
             'heart_rate_max'  => $validated['heart_rate_max'] ?? null,
             'heart_rate_avg'  => $validated['heart_rate_avg'] ?? null,
@@ -50,13 +55,19 @@ class SensorReadingController extends ApiController
             'mpu_angle_max'   => $validated['mpu_angle_max'] ?? null,
             'mpu_angle_avg'   => $validated['mpu_angle_avg'] ?? null,
             'reading_time'    => $validated['reading_time'],
+        ];
+
+        $warning = null;
+        try {
+            \Illuminate\Support\Facades\Redis::rpush('buffer:sensor_readings', json_encode($readingData));
+        } catch (\Exception $e) {
+            $warning = 'Redis connection failed. Falling back to MySQL direct insert.';
+            SensorReading::create($readingData);
+        }
+
+        return $this->successResponse('Sensor reading processed successfully.', parameters: [
+            'data' => $readingData,
+            'warning' => $warning
         ]);
-
-        // Trigger Dashboard Broadcast
-        $targetUser = $wheelchair->user;
-        $dashboardData = \App\Http\Controllers\DashboardController::getDashboardData($targetUser);
-        broadcast(new \App\Events\DashboardUpdated($targetUser->id, 'user_dashboard', $dashboardData));
-
-        return $this->successResponse('Sensor reading stored successfully.', parameters: ['data' => $reading]);
     }
 }

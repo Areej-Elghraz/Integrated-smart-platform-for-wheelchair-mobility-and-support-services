@@ -17,7 +17,6 @@ class DashboardController extends ApiController
 
         // 1. Current Vital Data & AI Recommendation
         $aiData = \App\Models\AiRecommendation::whereIn('wheelchair_id', $wheelchairIds)->latest()->first();
-
         $currentVitals = null;
         if ($aiData) {
             $currentVitals = [
@@ -35,7 +34,65 @@ class DashboardController extends ApiController
                     'status' => $aiData->fall_status
                 ]
             ];
+            // // Try Redis first for real-time data (before 5-minute MySQL sync)
+            // $aiData = null;
+            // $currentVitals = null;
+
+            // foreach ($wheelchairIds as $wId) {
+            //     $cachedVital = null;
+            //     try {
+            //         $cachedVital = \Illuminate\Support\Facades\Redis::get("latest_vital_state_{$wId}");
+            //     } catch (\Exception $e) {
+            //         // Redis not available, skip
+            //     }
+
+            //     if ($cachedVital) {
+            //         $parsed = json_decode($cachedVital);
+            //         if ($parsed) {
+            //             $currentVitals = [
+            //                 'heart' => [
+            //                     'value' => $parsed->heart_rate ?? null,
+            //                     'status' => $parsed->heart_rate_status ?? null
+            //                 ],
+            //                 'temperature' => [
+            //                     'value' => $parsed->temperature ?? null,
+            //                     'status' => $parsed->temperature_status ?? null
+            //                 ],
+            //                 'obstacle' => [
+            //                     'movement' => 'movement',
+            //                     'mpu_angle' => $parsed->mpu_angle ?? null,
+            //                     'status' => $parsed->fall_status ?? null
+            //                 ]
+            //             ];
+            //             // Build aiData-like object for recommendation section
+            //             $aiData = $parsed;
+            //             break;
+            //         }
+            //     }
         }
+
+        // // Fallback to MySQL if Redis had no data
+        // if (!$currentVitals) {
+        //     $aiData = \App\Models\AiRecommendation::whereIn('wheelchair_id', $wheelchairIds)->latest()->first();
+
+        //     if ($aiData) {
+        //         $currentVitals = [
+        //             'heart' => [
+        //                 'value' => $aiData->heart_rate,
+        //                 'status' => $aiData->heart_rate_status
+        //             ],
+        //             'temperature' => [
+        //                 'value' => $aiData->temperature,
+        //                 'status' => $aiData->temperature_status
+        //             ],
+        //             'obstacle' => [
+        //                 'movement' => 'movement',
+        //                 'mpu_angle' => $aiData->mpu_angle,
+        //                 'status' => $aiData->fall_status
+        //             ]
+        //         ];
+        //     }
+        // }
 
         // 2. Overviews (Trends)
         $dateFilter = now();
@@ -69,6 +126,12 @@ class DashboardController extends ApiController
                 $overviews['movement'][] = ['x_axis' => $timeLabel, 'y_axis' => round($row->mpu_angle_avg, 1)];
             }
         }
+
+        // // 3. Recent Alerts (Latest events regardless of type)
+        // $recentAlerts = Event::whereIn('wheelchair_id', $wheelchairIds)
+        //     ->latest()
+        //     ->take(10)
+        //     ->get();
 
         // 3. Recent Alerts (Latest for each type)
         $recentAlerts = [];
@@ -172,12 +235,19 @@ class DashboardController extends ApiController
             return $this->errorResponse('Unauthorized access.', 403);
         }
 
-        $patients = $user->friends()->wherePivot('status', 'accepted')->where('role', 'user')->get();
+        $patient = $user->connectedUserForCompanion;
+        if (!$patient) {
+            return $this->successResponse('Companion dashboard data retrieved.', parameters: ['data' => null]);
+        }
 
-        // Broadcast to companion channel if needed
-        // broadcast(new \App\Events\DashboardUpdated($user->id, 'companion_dashboard', ['patients' => $patients]));
+        $filter = request()->query('filter', 'today');
+        $limitStr = request()->query('limit');
+        $limit = $limitStr ? (int) $limitStr : null;
+        $search = request()->query('search');
 
-        return $this->successResponse('Companion dashboard data retrieved.', parameters: ['data' => ['patients' => $patients]]);
+        $data = self::getDashboardData($patient, $user, $filter, $limit, $search);
+
+        return $this->successResponse('Companion dashboard data retrieved.', parameters: ['data' => $data]);
     }
 
     public function doctorDashboard(Request $request): JsonResponse
@@ -187,7 +257,7 @@ class DashboardController extends ApiController
             return $this->errorResponse('Unauthorized access.', 403);
         }
 
-        $patients = $user->friends()->wherePivot('status', 'accepted')->where('role', 'user')->get();
+        $patients = $user->connectedPatients;
 
         $stats = [
             'total' => $patients->count(),
@@ -200,7 +270,8 @@ class DashboardController extends ApiController
             $wheelchairIds = $patient->wheelchairs()->pluck('id');
             $aiData = \App\Models\AiRecommendation::whereIn('wheelchair_id', $wheelchairIds)->latest()->first();
             if ($aiData) {
-                $stats[$aiData->risk_level] = ($stats[$aiData->risk_level] ?? 0) + 1;
+                $status = $aiData->risk_level === 'low' ? 'normal' : $aiData->risk_level;
+                $stats[$status] = ($stats[$status] ?? 0) + 1;
             } else {
                 $stats['normal']++;
             }
@@ -221,12 +292,36 @@ class DashboardController extends ApiController
             return $this->errorResponse('Unauthorized access. Only Organization Admins can view this dashboard.', 403);
         }
 
-        $auditLogs = \App\Models\AuditLog::where('user_id', $user->id)
-            ->latest()
-            ->take(50)
-            ->get();
-
         $organizations = $user->organizations()->get();
+        $orgIds = $organizations->pluck('id');
+
+        $recentBuildings = \App\Models\Building::whereIn('organization_id', $orgIds)
+            ->latest('updated_at')
+            ->take(25)
+            ->get()
+            ->map(function ($b) {
+                return [
+                    'type' => 'building_updated',
+                    'message' => 'Building updated: ' . $b->name,
+                    'created_at' => $b->updated_at,
+                ];
+            });
+
+        $recentPlaces = \App\Models\Place::whereHas('floor.building', function ($q) use ($orgIds) {
+            $q->whereIn('organization_id', $orgIds);
+        })
+            ->latest('updated_at')
+            ->take(25)
+            ->get()
+            ->map(function ($p) {
+                return [
+                    'type' => 'place_updated',
+                    'message' => 'Place updated: ' . $p->name,
+                    'created_at' => $p->updated_at,
+                ];
+            });
+
+        $auditLogs = $recentBuildings->concat($recentPlaces)->sortByDesc('created_at')->take(50)->values();
 
         return $this->successResponse('Organization Admin dashboard data retrieved.', parameters: [
             'data' => [

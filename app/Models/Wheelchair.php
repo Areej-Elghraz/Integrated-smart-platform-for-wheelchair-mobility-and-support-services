@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -20,6 +19,7 @@ class Wheelchair extends BaseModel
         'x_coordinate',
         'y_coordinate',
         'theta',
+        'current_floor_id',
     ];
 
     protected $casts = [
@@ -58,5 +58,15 @@ class Wheelchair extends BaseModel
     public function events(): HasMany
     {
         return $this->hasMany(Event::class);
+    }
+
+    public function floor(): BelongsTo
+    {
+        return $this->belongsTo(Floor::class, 'current_floor_id');
+    }
+
+    public function movementState(): HasOne
+    {
+        return $this->hasOne(WheelchairMovementState::class);
     }
 }

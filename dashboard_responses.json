@@ -1,0 +1,1197 @@
+{
+    "user_dashboard": {
+        "current_vitals": {
+            "heart": {
+                "value": 75,
+                "status": "low"
+            },
+            "temperature": {
+                "value": 36.6,
+                "status": "low"
+            },
+            "obstacle": {
+                "movement": "movement",
+                "mpu_angle": 2,
+                "status": "low"
+            }
+        },
+        "overviews": {
+            "health_rate": [
+                {
+                    "x_axis": "00:00",
+                    "y_axis": 74
+                },
+                {
+                    "x_axis": "00:00",
+                    "y_axis": 85
+                },
+                {
+                    "x_axis": "00:00",
+                    "y_axis": 73
+                },
+                {
+                    "x_axis": "00:00",
+                    "y_axis": 85
+                },
+                {
+                    "x_axis": "00:00",
+                    "y_axis": 76
+                },
+                {
+                    "x_axis": "01:00",
+                    "y_axis": 78
+                },
+                {
+                    "x_axis": "01:00",
+                    "y_axis": 75
+                },
+                {
+                    "x_axis": "01:00",
+                    "y_axis": 71
+                },
+                {
+                    "x_axis": "01:00",
+                    "y_axis": 85
+                },
+                {
+                    "x_axis": "01:00",
+                    "y_axis": 78
+                },
+                {
+                    "x_axis": "02:00",
+                    "y_axis": 72
+                },
+                {
+                    "x_axis": "02:00",
+                    "y_axis": 80
+                },
+                {
+                    "x_axis": "02:00",
+                    "y_axis": 82
+                },
+                {
+                    "x_axis": "02:00",
+                    "y_axis": 83
+                },
+                {
+                    "x_axis": "02:00",
+                    "y_axis": 79
+                },
+                {
+                    "x_axis": "03:00",
+                    "y_axis": 76
+                },
+                {
+                    "x_axis": "03:00",
+                    "y_axis": 76
+                },
+                {
+                    "x_axis": "03:00",
+                    "y_axis": 80
+                },
+                {
+                    "x_axis": "03:00",
+                    "y_axis": 83
+                },
+                {
+                    "x_axis": "03:00",
+                    "y_axis": 75
+                },
+                {
+                    "x_axis": "04:00",
+                    "y_axis": 82
+                },
+                {
+                    "x_axis": "04:00",
+                    "y_axis": 78
+                },
+                {
+                    "x_axis": "04:00",
+                    "y_axis": 76
+                },
+                {
+                    "x_axis": "04:00",
+                    "y_axis": 83
+                },
+                {
+                    "x_axis": "04:00",
+                    "y_axis": 70
+                },
+                {
+                    "x_axis": "05:00",
+                    "y_axis": 83
+                },
+                {
+                    "x_axis": "05:00",
+                    "y_axis": 76
+                },
+                {
+                    "x_axis": "05:00",
+                    "y_axis": 79
+                },
+                {
+                    "x_axis": "05:00",
+                    "y_axis": 75
+                },
+                {
+                    "x_axis": "05:00",
+                    "y_axis": 78
+                },
+                {
+                    "x_axis": "06:00",
+                    "y_axis": 81
+                },
+                {
+                    "x_axis": "06:00",
+                    "y_axis": 71
+                },
+                {
+                    "x_axis": "06:00",
+                    "y_axis": 72
+                },
+                {
+                    "x_axis": "06:00",
+                    "y_axis": 80
+                },
+                {
+                    "x_axis": "06:00",
+                    "y_axis": 82
+                },
+                {
+                    "x_axis": "07:00",
+                    "y_axis": 84
+                },
+                {
+                    "x_axis": "07:00",
+                    "y_axis": 71
+                },
+                {
+                    "x_axis": "07:00",
+                    "y_axis": 85
+                },
+                {
+                    "x_axis": "07:00",
+                    "y_axis": 83
+                },
+                {
+                    "x_axis": "07:00",
+                    "y_axis": 85
+                },
+                {
+                    "x_axis": "08:00",
+                    "y_axis": 84
+                },
+                {
+                    "x_axis": "08:00",
+                    "y_axis": 85
+                },
+                {
+                    "x_axis": "08:00",
+                    "y_axis": 73
+                },
+                {
+                    "x_axis": "08:00",
+                    "y_axis": 84
+                },
+                {
+                    "x_axis": "08:00",
+                    "y_axis": 70
+                },
+                {
+                    "x_axis": "09:00",
+                    "y_axis": 79
+                },
+                {
+                    "x_axis": "09:00",
+                    "y_axis": 79
+                },
+                {
+                    "x_axis": "09:00",
+                    "y_axis": 76
+                },
+                {
+                    "x_axis": "09:00",
+                    "y_axis": 81
+                },
+                {
+                    "x_axis": "09:00",
+                    "y_axis": 71
+                },
+                {
+                    "x_axis": "10:00",
+                    "y_axis": 78
+                },
+                {
+                    "x_axis": "10:00",
+                    "y_axis": 81
+                },
+                {
+                    "x_axis": "10:00",
+                    "y_axis": 75
+                },
+                {
+                    "x_axis": "10:00",
+                    "y_axis": 72
+                },
+                {
+                    "x_axis": "10:00",
+                    "y_axis": 76
+                },
+                {
+                    "x_axis": "11:00",
+                    "y_axis": 78
+                },
+                {
+                    "x_axis": "11:00",
+                    "y_axis": 73
+                },
+                {
+                    "x_axis": "11:00",
+                    "y_axis": 73
+                },
+                {
+                    "x_axis": "11:00",
+                    "y_axis": 79
+                },
+                {
+                    "x_axis": "11:00",
+                    "y_axis": 72
+                }
+            ],
+            "temperature": [
+                {
+                    "x_axis": "00:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "00:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "00:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "00:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "00:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "01:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "01:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "01:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "01:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "01:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "02:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "02:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "02:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "02:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "02:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "03:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "03:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "03:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "03:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "03:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "04:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "04:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "04:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "04:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "04:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "05:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "05:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "05:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "05:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "05:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "06:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "06:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "06:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "06:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "06:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "07:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "07:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "07:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "07:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "07:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "08:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "08:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "08:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "08:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "08:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "09:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "09:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "09:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "09:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "09:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "10:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "10:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "10:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "10:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "10:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "11:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "11:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "11:00",
+                    "y_axis": 37
+                },
+                {
+                    "x_axis": "11:00",
+                    "y_axis": 36
+                },
+                {
+                    "x_axis": "11:00",
+                    "y_axis": 36
+                }
+            ],
+            "movement": [
+                {
+                    "x_axis": "00:00",
+                    "y_axis": 2
+                },
+                {
+                    "x_axis": "00:00",
+                    "y_axis": 4
+                },
+                {
+                    "x_axis": "00:00",
+                    "y_axis": 3
+                },
+                {
+                    "x_axis": "01:00",
+                    "y_axis": 4
+                },
+                {
+                    "x_axis": "01:00",
+                    "y_axis": 5
+                },
+                {
+                    "x_axis": "01:00",
+                    "y_axis": 3
+                },
+                {
+                    "x_axis": "01:00",
+                    "y_axis": 3
+                },
+                {
+                    "x_axis": "02:00",
+                    "y_axis": 5
+                },
+                {
+                    "x_axis": "02:00",
+                    "y_axis": 5
+                },
+                {
+                    "x_axis": "02:00",
+                    "y_axis": 4
+                },
+                {
+                    "x_axis": "02:00",
+                    "y_axis": 4
+                },
+                {
+                    "x_axis": "03:00",
+                    "y_axis": 1
+                },
+                {
+                    "x_axis": "03:00",
+                    "y_axis": 2
+                },
+                {
+                    "x_axis": "03:00",
+                    "y_axis": 4
+                },
+                {
+                    "x_axis": "03:00",
+                    "y_axis": 5
+                },
+                {
+                    "x_axis": "04:00",
+                    "y_axis": 1
+                },
+                {
+                    "x_axis": "04:00",
+                    "y_axis": 5
+                },
+                {
+                    "x_axis": "04:00",
+                    "y_axis": 4
+                },
+                {
+                    "x_axis": "04:00",
+                    "y_axis": 4
+                },
+                {
+                    "x_axis": "04:00",
+                    "y_axis": 1
+                },
+                {
+                    "x_axis": "05:00",
+                    "y_axis": 1
+                },
+                {
+                    "x_axis": "05:00",
+                    "y_axis": 1
+                },
+                {
+                    "x_axis": "05:00",
+                    "y_axis": 2
+                },
+                {
+                    "x_axis": "06:00",
+                    "y_axis": 5
+                },
+                {
+                    "x_axis": "06:00",
+                    "y_axis": 4
+                },
+                {
+                    "x_axis": "06:00",
+                    "y_axis": 2
+                },
+                {
+                    "x_axis": "06:00",
+                    "y_axis": 4
+                },
+                {
+                    "x_axis": "06:00",
+                    "y_axis": 3
+                },
+                {
+                    "x_axis": "07:00",
+                    "y_axis": 2
+                },
+                {
+                    "x_axis": "07:00",
+                    "y_axis": 5
+                },
+                {
+                    "x_axis": "07:00",
+                    "y_axis": 3
+                },
+                {
+                    "x_axis": "07:00",
+                    "y_axis": 4
+                },
+                {
+                    "x_axis": "08:00",
+                    "y_axis": 1
+                },
+                {
+                    "x_axis": "08:00",
+                    "y_axis": 2
+                },
+                {
+                    "x_axis": "08:00",
+                    "y_axis": 3
+                },
+                {
+                    "x_axis": "09:00",
+                    "y_axis": 3
+                },
+                {
+                    "x_axis": "09:00",
+                    "y_axis": 4
+                },
+                {
+                    "x_axis": "09:00",
+                    "y_axis": 3
+                },
+                {
+                    "x_axis": "09:00",
+                    "y_axis": 3
+                },
+                {
+                    "x_axis": "10:00",
+                    "y_axis": 3
+                },
+                {
+                    "x_axis": "10:00",
+                    "y_axis": 2
+                },
+                {
+                    "x_axis": "10:00",
+                    "y_axis": 5
+                },
+                {
+                    "x_axis": "10:00",
+                    "y_axis": 5
+                },
+                {
+                    "x_axis": "10:00",
+                    "y_axis": 1
+                },
+                {
+                    "x_axis": "11:00",
+                    "y_axis": 3
+                },
+                {
+                    "x_axis": "11:00",
+                    "y_axis": 2
+                },
+                {
+                    "x_axis": "11:00",
+                    "y_axis": 4
+                },
+                {
+                    "x_axis": "11:00",
+                    "y_axis": 3
+                },
+                {
+                    "x_axis": "11:00",
+                    "y_axis": 5
+                }
+            ]
+        },
+        "recent_alerts": [],
+        "ai_recommendation": {
+            "risk_level": "low",
+            "recommendation": "All vitals are normal."
+        },
+        "last_visited_places": [
+            {
+                "id": 16,
+                "name": "auditorium 102",
+                "description": "Place Description",
+                "floor_id": 2,
+                "x": 75,
+                "y": 300,
+                "z": null,
+                "rotation": null,
+                "image": "https:\/\/chairpal-api.duckdns.org\/storage\/places\/bIEUFJIllsVdTp66BEG0cpAFglNpAzxxTQbGfr8M.png",
+                "accessibility_data": null,
+                "created_at": "2026-06-10T13:09:40.000000Z",
+                "updated_at": "2026-06-10T13:31:53.000000Z",
+                "points": [
+                    {
+                        "x": 50,
+                        "y": 1000
+                    },
+                    {
+                        "x": 100,
+                        "y": 100
+                    },
+                    {
+                        "x": 100,
+                        "y": 50
+                    },
+                    {
+                        "x": 50,
+                        "y": 50
+                    }
+                ],
+                "rating": 0,
+                "rating_distribution": [],
+                "top_reviews": [],
+                "is_favorite": false,
+                "top_visitors": [],
+                "visitorsCount": 0,
+                "average_rating": 0,
+                "country": {
+                    "id": 1,
+                    "name": "Vanuatu",
+                    "created_at": "2026-05-27T17:40:50.000000Z",
+                    "updated_at": "2026-05-27T17:40:50.000000Z"
+                },
+                "city": {
+                    "id": 4,
+                    "name": "North Orie",
+                    "country_id": 2,
+                    "created_at": "2026-05-27T17:40:50.000000Z",
+                    "updated_at": "2026-05-27T17:40:50.000000Z"
+                },
+                "floor": {
+                    "id": 2,
+                    "name": "Floor 1",
+                    "number": 1,
+                    "created_at": "2026-05-27T22:22:58.000000Z",
+                    "updated_at": "2026-06-10T05:21:05.000000Z",
+                    "building_id": 2,
+                    "building": {
+                        "id": 2,
+                        "name": "prayer room",
+                        "description": null,
+                        "organization_id": 5,
+                        "image": "https:\/\/chairpal-api.duckdns.org\/storage\/buildings\/JfYFzyrHY4w94RQnTZLt9LeSJGOnUY6CFeF0xpyo.png",
+                        "latitude": 12,
+                        "longitude": 11,
+                        "created_at": "2026-06-10T04:15:48.000000Z",
+                        "updated_at": "2026-06-10T10:42:43.000000Z",
+                        "owner_id": null,
+                        "organization": {
+                            "id": 5,
+                            "name": "Mann, Bergstrom and O'Connell",
+                            "description": "Qui nostrum eos quaerat sunt et voluptates vel. Sed et consequatur harum provident harum. Enim autem provident tempora voluptas minus voluptatem. Rerum aut explicabo est consequuntur et et.",
+                            "latitude": "-22.50658700",
+                            "longitude": "-20.80351600",
+                            "image": null,
+                            "created_at": "2026-05-27T17:40:50.000000Z",
+                            "updated_at": "2026-05-27T17:40:50.000000Z",
+                            "rating_distribution": {
+                                "1": "0%",
+                                "2": "0%",
+                                "3": "0%",
+                                "4": "100%",
+                                "5": "0%"
+                            },
+                            "top_reviews": [
+                                {
+                                    "id": 15,
+                                    "rating": 4,
+                                    "comment": "Good organization.",
+                                    "created_at": "2026-05-27T17:40:50.000000Z",
+                                    "updated_at": "2026-05-27T17:40:50.000000Z",
+                                    "user": {
+                                        "id": 10,
+                                        "name": "Dr. Jose Larson",
+                                        "image": null,
+                                        "age": null
+                                    }
+                                }
+                            ],
+                            "is_favorite": false,
+                            "top_visitors": [],
+                            "visitorsCount": 0,
+                            "average_rating": 4,
+                            "country": {
+                                "id": 1,
+                                "name": "Vanuatu",
+                                "created_at": "2026-05-27T17:40:50.000000Z",
+                                "updated_at": "2026-05-27T17:40:50.000000Z"
+                            },
+                            "city": {
+                                "id": 4,
+                                "name": "North Orie",
+                                "country_id": 2,
+                                "created_at": "2026-05-27T17:40:50.000000Z",
+                                "updated_at": "2026-05-27T17:40:50.000000Z"
+                            }
+                        }
+                    }
+                },
+                "categories": [
+                    {
+                        "id": 7,
+                        "name": "bathrooms",
+                        "image": "https:\/\/chairpal-api.duckdns.org\/storage\/categories\/TzBGyvDnZWvrAM0ZxkigNhSBmZ5i8fKT396FcTbE.jpg",
+                        "created_at": "2026-06-10T09:05:50.000000Z",
+                        "updated_at": "2026-06-10T09:05:50.000000Z"
+                    }
+                ]
+            },
+            {
+                "id": 16,
+                "name": "auditorium 102",
+                "description": "Place Description",
+                "floor_id": 2,
+                "x": 75,
+                "y": 300,
+                "z": null,
+                "rotation": null,
+                "image": "https:\/\/chairpal-api.duckdns.org\/storage\/places\/bIEUFJIllsVdTp66BEG0cpAFglNpAzxxTQbGfr8M.png",
+                "accessibility_data": null,
+                "created_at": "2026-06-10T13:09:40.000000Z",
+                "updated_at": "2026-06-10T13:31:53.000000Z",
+                "points": [
+                    {
+                        "x": 50,
+                        "y": 1000
+                    },
+                    {
+                        "x": 100,
+                        "y": 100
+                    },
+                    {
+                        "x": 100,
+                        "y": 50
+                    },
+                    {
+                        "x": 50,
+                        "y": 50
+                    }
+                ],
+                "rating": 0,
+                "rating_distribution": [],
+                "top_reviews": [],
+                "is_favorite": false,
+                "top_visitors": [],
+                "visitorsCount": 0,
+                "average_rating": 0,
+                "country": {
+                    "id": 1,
+                    "name": "Vanuatu",
+                    "created_at": "2026-05-27T17:40:50.000000Z",
+                    "updated_at": "2026-05-27T17:40:50.000000Z"
+                },
+                "city": {
+                    "id": 4,
+                    "name": "North Orie",
+                    "country_id": 2,
+                    "created_at": "2026-05-27T17:40:50.000000Z",
+                    "updated_at": "2026-05-27T17:40:50.000000Z"
+                },
+                "floor": {
+                    "id": 2,
+                    "name": "Floor 1",
+                    "number": 1,
+                    "created_at": "2026-05-27T22:22:58.000000Z",
+                    "updated_at": "2026-06-10T05:21:05.000000Z",
+                    "building_id": 2,
+                    "building": {
+                        "id": 2,
+                        "name": "prayer room",
+                        "description": null,
+                        "organization_id": 5,
+                        "image": "https:\/\/chairpal-api.duckdns.org\/storage\/buildings\/JfYFzyrHY4w94RQnTZLt9LeSJGOnUY6CFeF0xpyo.png",
+                        "latitude": 12,
+                        "longitude": 11,
+                        "created_at": "2026-06-10T04:15:48.000000Z",
+                        "updated_at": "2026-06-10T10:42:43.000000Z",
+                        "owner_id": null,
+                        "organization": {
+                            "id": 5,
+                            "name": "Mann, Bergstrom and O'Connell",
+                            "description": "Qui nostrum eos quaerat sunt et voluptates vel. Sed et consequatur harum provident harum. Enim autem provident tempora voluptas minus voluptatem. Rerum aut explicabo est consequuntur et et.",
+                            "latitude": "-22.50658700",
+                            "longitude": "-20.80351600",
+                            "image": null,
+                            "created_at": "2026-05-27T17:40:50.000000Z",
+                            "updated_at": "2026-05-27T17:40:50.000000Z",
+                            "rating_distribution": {
+                                "1": "0%",
+                                "2": "0%",
+                                "3": "0%",
+                                "4": "100%",
+                                "5": "0%"
+                            },
+                            "top_reviews": [
+                                {
+                                    "id": 15,
+                                    "rating": 4,
+                                    "comment": "Good organization.",
+                                    "created_at": "2026-05-27T17:40:50.000000Z",
+                                    "updated_at": "2026-05-27T17:40:50.000000Z",
+                                    "user": {
+                                        "id": 10,
+                                        "name": "Dr. Jose Larson",
+                                        "image": null,
+                                        "age": null
+                                    }
+                                }
+                            ],
+                            "is_favorite": false,
+                            "top_visitors": [],
+                            "visitorsCount": 0,
+                            "average_rating": 4,
+                            "country": {
+                                "id": 1,
+                                "name": "Vanuatu",
+                                "created_at": "2026-05-27T17:40:50.000000Z",
+                                "updated_at": "2026-05-27T17:40:50.000000Z"
+                            },
+                            "city": {
+                                "id": 4,
+                                "name": "North Orie",
+                                "country_id": 2,
+                                "created_at": "2026-05-27T17:40:50.000000Z",
+                                "updated_at": "2026-05-27T17:40:50.000000Z"
+                            }
+                        }
+                    }
+                },
+                "categories": [
+                    {
+                        "id": 7,
+                        "name": "bathrooms",
+                        "image": "https:\/\/chairpal-api.duckdns.org\/storage\/categories\/TzBGyvDnZWvrAM0ZxkigNhSBmZ5i8fKT396FcTbE.jpg",
+                        "created_at": "2026-06-10T09:05:50.000000Z",
+                        "updated_at": "2026-06-10T09:05:50.000000Z"
+                    }
+                ]
+            }
+        ],
+        "last_trip_updates": {
+            "id": 19,
+            "created_at": "2026-06-15T16:22:19.000000Z",
+            "updated_at": "2026-06-15T16:22:19.000000Z",
+            "wheelchair_id": 8,
+            "mode": "autonomous",
+            "status": "started",
+            "started_at": "2026-06-15T16:22:19.000000Z",
+            "ended_at": null,
+            "place_id": 16,
+            "start_x": -0.17,
+            "start_y": 3.57,
+            "end_x": 75,
+            "end_y": 300,
+            "place": {
+                "id": 16,
+                "name": "auditorium 102",
+                "description": "Place Description",
+                "floor_id": 2,
+                "x": 75,
+                "y": 300,
+                "z": null,
+                "rotation": null,
+                "image": "https:\/\/chairpal-api.duckdns.org\/storage\/places\/bIEUFJIllsVdTp66BEG0cpAFglNpAzxxTQbGfr8M.png",
+                "accessibility_data": null,
+                "created_at": "2026-06-10T13:09:40.000000Z",
+                "updated_at": "2026-06-10T13:31:53.000000Z",
+                "points": [
+                    {
+                        "x": 50,
+                        "y": 1000
+                    },
+                    {
+                        "x": 100,
+                        "y": 100
+                    },
+                    {
+                        "x": 100,
+                        "y": 50
+                    },
+                    {
+                        "x": 50,
+                        "y": 50
+                    }
+                ],
+                "rating": 0,
+                "rating_distribution": [],
+                "top_reviews": [],
+                "is_favorite": false,
+                "top_visitors": [],
+                "visitorsCount": 0,
+                "average_rating": 0,
+                "country": {
+                    "id": 1,
+                    "name": "Vanuatu",
+                    "created_at": "2026-05-27T17:40:50.000000Z",
+                    "updated_at": "2026-05-27T17:40:50.000000Z"
+                },
+                "city": {
+                    "id": 4,
+                    "name": "North Orie",
+                    "country_id": 2,
+                    "created_at": "2026-05-27T17:40:50.000000Z",
+                    "updated_at": "2026-05-27T17:40:50.000000Z"
+                },
+                "floor": {
+                    "id": 2,
+                    "name": "Floor 1",
+                    "number": 1,
+                    "created_at": "2026-05-27T22:22:58.000000Z",
+                    "updated_at": "2026-06-10T05:21:05.000000Z",
+                    "building_id": 2,
+                    "building": {
+                        "id": 2,
+                        "name": "prayer room",
+                        "description": null,
+                        "organization_id": 5,
+                        "image": "https:\/\/chairpal-api.duckdns.org\/storage\/buildings\/JfYFzyrHY4w94RQnTZLt9LeSJGOnUY6CFeF0xpyo.png",
+                        "latitude": 12,
+                        "longitude": 11,
+                        "created_at": "2026-06-10T04:15:48.000000Z",
+                        "updated_at": "2026-06-10T10:42:43.000000Z",
+                        "owner_id": null,
+                        "organization": {
+                            "id": 5,
+                            "name": "Mann, Bergstrom and O'Connell",
+                            "description": "Qui nostrum eos quaerat sunt et voluptates vel. Sed et consequatur harum provident harum. Enim autem provident tempora voluptas minus voluptatem. Rerum aut explicabo est consequuntur et et.",
+                            "latitude": "-22.50658700",
+                            "longitude": "-20.80351600",
+                            "image": null,
+                            "created_at": "2026-05-27T17:40:50.000000Z",
+                            "updated_at": "2026-05-27T17:40:50.000000Z",
+                            "rating_distribution": {
+                                "1": "0%",
+                                "2": "0%",
+                                "3": "0%",
+                                "4": "100%",
+                                "5": "0%"
+                            },
+                            "top_reviews": [
+                                {
+                                    "id": 15,
+                                    "rating": 4,
+                                    "comment": "Good organization.",
+                                    "created_at": "2026-05-27T17:40:50.000000Z",
+                                    "updated_at": "2026-05-27T17:40:50.000000Z",
+                                    "user": {
+                                        "id": 10,
+                                        "name": "Dr. Jose Larson",
+                                        "image": null,
+                                        "age": null
+                                    }
+                                }
+                            ],
+                            "is_favorite": false,
+                            "top_visitors": [],
+                            "visitorsCount": 0,
+                            "average_rating": 4,
+                            "country": {
+                                "id": 1,
+                                "name": "Vanuatu",
+                                "created_at": "2026-05-27T17:40:50.000000Z",
+                                "updated_at": "2026-05-27T17:40:50.000000Z"
+                            },
+                            "city": {
+                                "id": 4,
+                                "name": "North Orie",
+                                "country_id": 2,
+                                "created_at": "2026-05-27T17:40:50.000000Z",
+                                "updated_at": "2026-05-27T17:40:50.000000Z"
+                            }
+                        }
+                    }
+                },
+                "categories": [
+                    {
+                        "id": 7,
+                        "name": "bathrooms",
+                        "image": "https:\/\/chairpal-api.duckdns.org\/storage\/categories\/TzBGyvDnZWvrAM0ZxkigNhSBmZ5i8fKT396FcTbE.jpg",
+                        "created_at": "2026-06-10T09:05:50.000000Z",
+                        "updated_at": "2026-06-10T09:05:50.000000Z"
+                    }
+                ]
+            },
+            "wheelchair": {
+                "id": 8,
+                "serial_number": "123123",
+                "api_key": "wh_mncuSTlOm3t3bDKMPfNZC4I5GnWevsIa",
+                "created_at": "2026-05-29T23:33:58.000000Z",
+                "updated_at": "2026-06-15T13:56:17.000000Z",
+                "user_id": 16,
+                "connection_state": "online",
+                "x_coordinate": -0.17,
+                "y_coordinate": 3.57,
+                "theta": 1.75,
+                "current_floor_id": 3
+            }
+        }
+    },
+    "companion_dashboard": {
+        "patients": [
+            {
+                "id": 16,
+                "name": "Areej Org Admin",
+                "username": "areej123",
+                "gender": "female",
+                "birth_date": "2001-05-20",
+                "weight": 62.5,
+                "height": 165,
+                "email": "areejelghraz@gmail.com",
+                "email_verified_at": "2026-05-27T18:06:25.000000Z",
+                "role": "user",
+                "phone": "+201111111111",
+                "image": null,
+                "language": "en",
+                "created_at": "2026-05-27T18:05:18.000000Z",
+                "updated_at": "2026-06-14T12:24:34.000000Z",
+                "age": 25,
+                "pivot": {
+                    "user_id": 17,
+                    "friend_id": 16,
+                    "status": "accepted",
+                    "accepted_at": "2026-06-13T16:19:16.000000Z",
+                    "created_at": "2026-05-27T18:06:47.000000Z",
+                    "updated_at": "2026-06-13T16:19:16.000000Z"
+                },
+                "wheelchairs": [
+                    {
+                        "id": 8,
+                        "serial_number": "123123",
+                        "api_key": "wh_mncuSTlOm3t3bDKMPfNZC4I5GnWevsIa",
+                        "created_at": "2026-05-29T23:33:58.000000Z",
+                        "updated_at": "2026-06-15T13:56:17.000000Z",
+                        "user_id": 16,
+                        "connection_state": "online",
+                        "x_coordinate": -0.17,
+                        "y_coordinate": 3.57,
+                        "theta": 1.75,
+                        "current_floor_id": 3
+                    }
+                ],
+                "medical_conditions": []
+            }
+        ]
+    },
+    "doctor_dashboard": {
+        "patients": [
+            {
+                "id": 16,
+                "name": "Areej Org Admin",
+                "username": "areej123",
+                "gender": "female",
+                "birth_date": "2001-05-20",
+                "weight": 62.5,
+                "height": 165,
+                "email": "areejelghraz@gmail.com",
+                "email_verified_at": "2026-05-27T18:06:25.000000Z",
+                "role": "user",
+                "phone": "+201111111111",
+                "image": null,
+                "language": "en",
+                "created_at": "2026-05-27T18:05:18.000000Z",
+                "updated_at": "2026-06-14T12:24:34.000000Z",
+                "age": 25
+            }
+        ]
+    },
+    "organization_dashboard": []
+}

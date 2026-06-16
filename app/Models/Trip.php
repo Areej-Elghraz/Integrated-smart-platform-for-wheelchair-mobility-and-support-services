@@ -16,6 +16,10 @@ class Trip extends BaseModel
         'status',
         'started_at',
         'ended_at',
+        'start_x',
+        'start_y',
+        'end_x',
+        'end_y',
     ];
 
     protected $casts = [

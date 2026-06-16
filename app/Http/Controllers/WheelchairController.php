@@ -25,14 +25,23 @@ class WheelchairController extends ApiController
 
         if (in_array($user->role, ['companion', 'doctor'])) {
             $patientIds = $user->friends()->wherePivot('status', 'accepted')->pluck('users.id');
-            $wheelchairs = Wheelchair::whereIn('user_id', $patientIds)
+            $wheelchairs = Wheelchair::with(['trips' => function ($q) {
+                $q->where('status', 'started')->latest();
+            }])->whereIn('user_id', $patientIds)
                 ->where('connection_state', 'online')
                 ->get();
+
+            $wheelchairs->each(function($w) {
+                $w->active_trip = $w->trips->first() ?? null;
+                unset($w->trips);
+            });
 
             return $this->successResponse('Current wheelchairs retrieved successfully.', parameters: ['data' => $wheelchairs]);
         }
 
-        $wheelchair = Wheelchair::where('user_id', $user->id)
+        $wheelchair = Wheelchair::with(['trips' => function ($q) {
+            $q->where('status', 'started')->latest();
+        }])->where('user_id', $user->id)
             ->where('connection_state', 'online')
             ->first();
 
@@ -40,7 +49,49 @@ class WheelchairController extends ApiController
             return $this->errorResponse('No active wheelchair found.', 404);
         }
 
+        $wheelchair->active_trip = $wheelchair->trips->first() ?? null;
+        unset($wheelchair->trips);
+
         return $this->successResponse('Current wheelchair retrieved successfully.', parameters: ['data' => $wheelchair]);
+    }
+
+    /**
+     * Initialize location for the wheelchair.
+     */
+    public function initializeLocation(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'wheelchair_id' => 'required|exists:wheelchairs,id',
+            'floor_id' => 'required|exists:floors,id',
+            'x_coordinate' => 'required|numeric',
+            'y_coordinate' => 'required|numeric',
+            'theta' => 'nullable|numeric',
+        ]);
+
+        $wheelchair = Wheelchair::findOrFail($validated['wheelchair_id']);
+        
+        $user = Auth::user();
+        if ($wheelchair->user_id !== $user->id) {
+            // Check if companion
+            $isCompanion = $user->friends()
+                ->wherePivot('status', 'accepted')
+                ->where('users.id', $wheelchair->user_id)
+                ->exists();
+            if (!$isCompanion) {
+                return $this->errorResponse('Unauthorized to initialize location for this wheelchair.', 403);
+            }
+        }
+
+        $wheelchair->update([
+            'current_floor_id' => $validated['floor_id'],
+            'x_coordinate' => $validated['x_coordinate'],
+            'y_coordinate' => $validated['y_coordinate'],
+            'theta' => $validated['theta'] ?? $wheelchair->theta,
+        ]);
+
+        broadcast(new WheelchairUpdated($wheelchair));
+
+        return $this->successResponse('Location initialized successfully.', parameters: ['data' => $wheelchair]);
     }
 
     /**
@@ -214,7 +265,28 @@ class WheelchairController extends ApiController
         $wheelchair = Wheelchair::findOrFail($wheelchairId);
         $this->authorize('view', $wheelchair);
 
-        return $this->successResponse('Vital state retrieved.', parameters: ['data' => $wheelchair->aiRecommendations()->latest()->first()]);
+        // Fetch from Redis first to get real-time data before MySQL sync
+        $redisKey = "latest_vital_state_{$wheelchairId}";
+        $cachedState = null;
+        $warning = null;
+        
+        try {
+            $cachedState = \Illuminate\Support\Facades\Redis::get($redisKey);
+        } catch (\Exception $e) {
+            $warning = 'Redis connection failed. Falling back to MySQL.';
+        }
+
+        if ($cachedState) {
+            $aiData = json_decode($cachedState);
+        } else {
+            // Fallback to MySQL
+            $aiData = $wheelchair->aiRecommendations()->latest()->first();
+        }
+
+        return $this->successResponse('Vital state retrieved.', parameters: [
+            'data' => $aiData,
+            'warning' => $warning
+        ]);
     }
 
     /**
@@ -223,7 +295,6 @@ class WheelchairController extends ApiController
     public function updateCurrentVitalState(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'trip_id' => 'nullable|exists:trips,id',
             'heart_rate' => 'required|numeric',
             'heart_rate_status' => 'required|string|in:low,medium,critical',
             'temperature' => 'required|numeric',
@@ -243,26 +314,47 @@ class WheelchairController extends ApiController
 
         DB::beginTransaction();
         try {
-            $aiData = $wheelchair->aiRecommendations()->updateOrCreate(
-                ['wheelchair_id' => $wheelchair->id],
-                \Illuminate\Support\Arr::except($validated, ['trip_id'])
-            );
+            // Auto-detect active trip
+            $activeTrip = \App\Models\Trip::where('wheelchair_id', $wheelchair->id)
+                ->where('status', 'started')
+                ->first();
 
-            // Record event
-            $event = Event::create([
-                'wheelchair_id' => $wheelchair->id,
-                'trip_id' => $validated['trip_id'] ?? null,
-                'type' => $validated['type'] ?? 'health',
-                'severity' => $validated['risk_level'],
-                'message' => $validated['reason'] ?? $validated['recommendation'] ?? 'Health update',
-                'data' => [
-                    'heart_rate' => $validated['heart_rate'],
-                    'temperature' => $validated['temperature'],
-                    'mpu_angle' => $validated['mpu_angle'],
-                    'fall_status' => $validated['fall_status'],
-                ],
-                'event_source' => 'ai',
-            ]);
+            $warning = null;
+            
+            // Buffer vital state safely
+            $vitalData = $validated;
+            $vitalData['wheelchair_id'] = $wheelchair->id;
+            
+            try {
+                \Illuminate\Support\Facades\Redis::rpush('buffer:vital_states', json_encode($vitalData));
+                // Save latest state to Redis key for immediate retrieval via showVitals API
+                \Illuminate\Support\Facades\Redis::setex("latest_vital_state_{$wheelchair->id}", 600, json_encode($vitalData));
+                $aiData = (object) $vitalData;
+            } catch (\Exception $e) {
+                $warning .= 'Redis connection failed. Falling back to MySQL. ';
+                $aiData = $wheelchair->aiRecommendations()->updateOrCreate(
+                    ['wheelchair_id' => $wheelchair->id],
+                    $validated
+                );
+            }
+
+            // Record event ONLY if it's not a routine 'low' risk update (Best Practice)
+            if ($validated['risk_level'] !== 'low') {
+                $event = Event::create([
+                    'wheelchair_id' => $wheelchair->id,
+                    'trip_id' => $activeTrip ? $activeTrip->id : null,
+                    'type' => $validated['type'] ?? 'health',
+                    'severity' => $validated['risk_level'],
+                    'message' => $validated['reason'] ?? $validated['recommendation'] ?? 'Health update',
+                    'data' => [
+                        'heart_rate' => $validated['heart_rate'],
+                        'temperature' => $validated['temperature'],
+                        'mpu_angle' => $validated['mpu_angle'],
+                        'fall_status' => $validated['fall_status'],
+                    ],
+                    'event_source' => 'ai',
+                ]);
+            }
 
             // Automatic SOS Trigger on critical fall (Fainting/Accident)
             if ($validated['fall_status'] === 'critical') {
@@ -290,28 +382,139 @@ class WheelchairController extends ApiController
                     ];
 
                     foreach ($allConnected as $connection) {
-                        broadcast(new \App\Events\SosTriggered($connection->id, $payload));
-                        $connection->notify(new \App\Notifications\DatabaseNotification\SosAlertNotification($user, $payload));
-                        \Illuminate\Support\Facades\Log::info("Auto SOS broadcast to {$connection->name} for patient {$user->name} due to critical fall.");
+                        try {
+                            broadcast(new \App\Events\SosTriggered($connection->id, $payload));
+                            $connection->notify(new \App\Notifications\DatabaseNotification\SosAlertNotification($user, $payload));
+                            \Illuminate\Support\Facades\Log::info("Auto SOS broadcast to {$connection->name} for patient {$user->name} due to critical fall.");
+                        } catch (\Exception $e) {
+                            $warning .= 'SOS Broadcast failed for one or more users. ';
+                        }
                     }
                 }
             }
 
             DB::commit();
 
-            broadcast(new WheelchairEventOccurred($event));
+            try {
+                if (isset($event)) {
+                    broadcast(new WheelchairEventOccurred($event));
+                }
+            } catch (\Exception $e) {
+                $warning .= 'Event broadcast failed. ';
+            }
 
             // Trigger Dashboard Broadcast
             $targetUser = $wheelchair->user;
             if ($targetUser) {
-                $dashboardData = \App\Http\Controllers\DashboardController::getDashboardData($targetUser);
-                broadcast(new \App\Events\DashboardUpdated($targetUser->id, 'user_dashboard', $dashboardData));
+                try {
+                    broadcast(new \App\Events\DashboardUpdated($targetUser->id, 'user_dashboard', ['action' => 'refresh_required']));
+                } catch (\Exception $e) {
+                    $warning .= 'Dashboard broadcast failed. ';
+                }
             }
 
-            return $this->successResponse('Vital state updated successfully.', parameters: ['data' => $aiData]);
+            return $this->successResponse('Vital state updated successfully.', parameters: [
+                'data' => $aiData,
+                'warning' => $warning ?: null
+            ]);
         } catch (\Exception $e) {
             DB::rollBack();
             return $this->errorResponse('Failed to update vitals: ' . $e->getMessage(), 500);
         }
+    }
+
+    /**
+     * Get movement states of a wheelchair.
+     */
+    public function getMovementStatus($wheelchairId): JsonResponse
+    {
+        $wheelchair = Wheelchair::findOrFail($wheelchairId);
+        $this->authorize('view', $wheelchair);
+
+        // Fetch from Redis first to get real-time data before MySQL sync
+        $redisKey = "latest_movement_state_{$wheelchairId}";
+        $cachedState = null;
+        $warning = null;
+        
+        try {
+            $cachedState = \Illuminate\Support\Facades\Redis::get($redisKey);
+        } catch (\Exception $e) {
+            $warning = 'Redis connection failed. Falling back to MySQL.';
+        }
+
+        if ($cachedState) {
+            $movementState = json_decode($cachedState);
+        } else {
+            // Fallback to MySQL
+            $movementState = $wheelchair->movementState;
+        }
+
+        return $this->successResponse('Movement state retrieved.', parameters: [
+            'data' => $movementState,
+            'warning' => $warning
+        ]);
+    }
+
+    /**
+     * Update movement states of a wheelchair.
+     */
+    public function updateMovementStatus(\App\Http\Requests\Trip\UpdateMovementStateRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+
+        $wheelchair = $request->get('authenticated_wheelchair');
+        if (!$wheelchair) {
+            return $this->errorResponse('Unauthorized wheelchair.', 403);
+        }
+
+        // 1. Update wheelchair coordinates
+        $wheelchair->update([
+            'x_coordinate' => $validated['position']['x'],
+            'y_coordinate' => $validated['position']['y'],
+            'theta' => $validated['theta'],
+        ]);
+
+        // Broadcast to UI safely
+        $warning = null;
+        try {
+            broadcast(new \App\Events\WheelchairUpdated($wheelchair));
+        } catch (\Exception $e) {
+            $warning = 'Reverb/Broadcast failed. ';
+        }
+
+        // 2. Buffer movement state safely
+        $movementData = $validated;
+        $movementData['wheelchair_id'] = $wheelchair->id;
+        
+        try {
+            \Illuminate\Support\Facades\Redis::rpush('buffer:movement_states', json_encode($movementData));
+            // Save latest state to Redis key for immediate retrieval via getMovementStatus API
+            \Illuminate\Support\Facades\Redis::setex("latest_movement_state_{$wheelchair->id}", 600, json_encode($movementData));
+            
+            $movementState = (object) $movementData;
+            $movementState->wheelchair = $wheelchair;
+        } catch (\Exception $e) {
+            $warning .= 'Redis connection failed. Falling back to MySQL. ';
+            $movementState = $wheelchair->movementState()->updateOrCreate(
+                ['wheelchair_id' => $wheelchair->id],
+                $validated
+            );
+            $movementState->load('wheelchair');
+        }
+
+        try {
+            broadcast(new \App\Events\WheelchairMovementStatusUpdated($movementState));
+        } catch (\Exception $e) {
+            // Already appended warning if Reverb failed above
+            if (!$warning) $warning = 'Reverb/Broadcast failed.';
+        }
+
+        return $this->successResponse('Wheelchair movement state processed successfully.', parameters: [
+            'data' => [
+                'wheelchair' => $wheelchair,
+                'movement_state' => $movementState
+            ],
+            'warning' => $warning ?: null
+        ]);
     }
 }

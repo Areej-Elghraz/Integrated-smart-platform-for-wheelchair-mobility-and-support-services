@@ -195,6 +195,34 @@ class MessageController extends ApiController
                 'max_tokens' => (int) $maxTokens,
                 'temperature' => (float) $temperature,
                 'top_p' => (float) $topP,
+
+                'user_profile' => [
+                    'name' => $user->name,
+                    'medical_condition' => $medicalConditions ?: 'Unknown',
+                    'age' => $user->age,
+                    'weight' => $user->weight,
+                    'gender' => $user->gender,
+                ],
+                'relations' => [
+                    'doctor' => $doctor ? ['name' => $doctor->name, 'phone' => $doctor->phone] : null,
+                    'companions' => $companions,
+                ],
+                'wheelchair_status' => $wheelchair ? [
+                    'serial_number' => $wheelchair->serial_number,
+                    'battery' => $wheelchair->battery,
+                    'connection' => $wheelchair->connection_state,
+                ] : null,
+                'current_health_state' => $vitalState ? [
+                    'heart_rate' => $vitalState->heart_rate,
+                    'temperature' => $vitalState->temperature,
+                    'mpu_monitoring' => [
+                        'angle' => $vitalState->mpu_angle,
+                        'fall_detected' => $vitalState->fall_status === 'critical',
+                        "fainting_risk" => $vitalState->fall_status,
+                    ]
+                ] : null,
+                'current_trip' => $currentTrip,
+                'latest_alerts' => $latestAlerts,
             ]);
 
             if ($postResponse->failed()) {

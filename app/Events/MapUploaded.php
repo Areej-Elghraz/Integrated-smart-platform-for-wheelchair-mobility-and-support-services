@@ -35,4 +35,18 @@ class MapUploaded implements ShouldBroadcast
             new PrivateChannel('floor.' . $this->map->floor_id),
         ];
     }
+
+    /**
+     * Get the data to broadcast.
+     * Prevents large yaml_data from causing Pusher 'Payload too large' error.
+     */
+    public function broadcastWith(): array
+    {
+        return [
+            'map_id' => $this->map->id,
+            'floor_id' => $this->map->floor_id,
+            'map_file_url' => $this->map->map_file,
+            'action' => 'map_uploaded'
+        ];
+    }
 }

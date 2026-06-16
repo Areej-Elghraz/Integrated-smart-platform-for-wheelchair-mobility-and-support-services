@@ -12,14 +12,16 @@ class ConnectionRequestReceivedNotification extends Notification
 
     public $sender;
     public $type;
+    public $connectionRequestId;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct(User $sender, string $type)
+    public function __construct(User $sender, string $type, $connectionRequestId = null)
     {
         $this->sender = $sender;
         $this->type = $type;
+        $this->connectionRequestId = $connectionRequestId;
     }
 
     /**
@@ -42,6 +44,7 @@ class ConnectionRequestReceivedNotification extends Notification
         return [
             'type' => 'connection_request_received',
             'connection_type' => $this->type,
+            'connection_id' => $this->connectionRequestId,
             'user' => [
                 'id' => $this->sender->id,
                 'name' => $this->sender->name,

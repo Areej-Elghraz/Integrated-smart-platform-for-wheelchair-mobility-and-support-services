@@ -3,7 +3,7 @@
         'name' => 'laravel/laravel',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'e6111716bb4c880b14681e1ea0f531137a58b19e',
+        'reference' => '1aaf96aa9b09b911ec528673b33918cd1b8eb90e',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -589,7 +589,7 @@
         'laravel/laravel' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'e6111716bb4c880b14681e1ea0f531137a58b19e',
+            'reference' => '1aaf96aa9b09b911ec528673b33918cd1b8eb90e',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -978,6 +978,15 @@
             'install_path' => __DIR__ . '/../phpunit/phpunit',
             'aliases' => array(),
             'dev_requirement' => true,
+        ),
+        'predis/predis' => array(
+            'pretty_version' => 'v3.5.1',
+            'version' => '3.5.1.0',
+            'reference' => '5c996db191ee2d9bafe651f454b1fca16754271b',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../predis/predis',
+            'aliases' => array(),
+            'dev_requirement' => false,
         ),
         'propaganistas/laravel-phone' => array(
             'pretty_version' => '6.0.3',

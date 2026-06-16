@@ -14,7 +14,6 @@ class StoreSensorReadingRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'trip_id'           => 'nullable|integer|exists:trips,id',
             'heart_rate_min'    => 'nullable|numeric|min:0|max:300',
             'heart_rate_max'    => 'nullable|numeric|min:0|max:300',
             'heart_rate_avg'    => 'nullable|numeric|min:0|max:300',

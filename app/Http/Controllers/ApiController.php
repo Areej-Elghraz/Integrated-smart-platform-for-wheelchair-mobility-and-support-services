@@ -29,6 +29,10 @@ abstract class ApiController extends Controller
             'data' => isset($parameters['data']) || (isset($parameters['data']) && isset($parameters['total'])) ? $parameters['data'] : $parameters
         ];
 
+        if (isset($parameters['warning'])) {
+            $response['warning'] = $parameters['warning'];
+        }
+
         if (isset($parameters['data']) && isset($parameters['total'])) {
             $response['total'] = $parameters['total'];
         }

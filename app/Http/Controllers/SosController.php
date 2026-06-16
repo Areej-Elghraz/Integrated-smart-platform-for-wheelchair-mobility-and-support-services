@@ -51,6 +51,17 @@ class SosController extends ApiController
             'triggered_at' => now()->toISOString(),
         ];
 
+        // Fail any active trips
+        $wheelchair = \App\Models\Wheelchair::where('user_id', $user->id)->first();
+        if ($wheelchair) {
+            \App\Models\Trip::where('wheelchair_id', $wheelchair->id)
+                ->where('status', 'started')
+                ->update([
+                    'status' => 'failed',
+                    'ended_at' => now(),
+                ]);
+        }
+
         // Dispatch the internal event. Listeners will handle Broadcast and DB Notification.
         event(new \App\Events\SosTriggeredEvent($user, $payload, $allConnected));
 

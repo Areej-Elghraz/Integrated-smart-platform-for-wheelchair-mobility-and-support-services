@@ -14,7 +14,6 @@ class StoreEventRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'trip_id'       => 'nullable|exists:trips,id',
             'type'          => 'required|string|in:health,obstacle,sos,battery',
             'severity'      => 'required|string|in:low,medium,critical',
             'message'       => 'required|string|max:1000',

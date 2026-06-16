@@ -31,7 +31,6 @@ class UpdateMovementStateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'trip_id' => 'nullable|exists:trips,id',
             'movement_status' => 'required|string|in:moving,idle',
             'speed' => 'required|numeric',
             'position' => 'required|array',

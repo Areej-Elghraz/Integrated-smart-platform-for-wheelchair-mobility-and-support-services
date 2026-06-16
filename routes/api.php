@@ -90,6 +90,7 @@ Route::middleware(['auth:sanctum', 'ability:' . TokenAbilityEnum::ACCESS_TOKEN->
 
 
   // Wheelchairs
+  Route::post('/wheelchairs/initialize-location', [\App\Http\Controllers\WheelchairController::class, 'initializeLocation'])->name('wheelchairs.initialize_location');
   Route::get('/wheelchairs/current', [\App\Http\Controllers\WheelchairController::class, 'current'])->name('wheelchairs.current');
   Route::get('/wheelchairs/mapping-permission', [\App\Http\Controllers\WheelchairController::class, 'checkMappingPermission'])->name('wheelchairs.mapping_permission');
   Route::post('/wheelchairs/connect', [\App\Http\Controllers\WheelchairController::class, 'connect'])->name('wheelchairs.connect');
@@ -126,6 +127,7 @@ Route::middleware(['auth:sanctum', 'ability:' . TokenAbilityEnum::ACCESS_TOKEN->
   // Connection Requests (Companion & Doctor)
   Route::post('/connections/send', [\App\Http\Controllers\ConnectionRequestController::class, 'sendRequest'])->name('connections.send');
   Route::post('/connections/{connectionRequest}/handle', [\App\Http\Controllers\ConnectionRequestController::class, 'handleRequest'])->name('connections.handle');
+  Route::delete('/connections/{connectedUser}/remove', [\App\Http\Controllers\ConnectionRequestController::class, 'removeConnection'])->name('connections.remove');
   Route::get('/connections/pending', [\App\Http\Controllers\ConnectionRequestController::class, 'indexPending'])->name('connections.pending');
   Route::get('/connections/companions', [\App\Http\Controllers\ConnectionRequestController::class, 'indexConnectedCompanions'])->name('connections.companions');
   Route::get('/connections/doctor', [\App\Http\Controllers\ConnectionRequestController::class, 'getConnectedDoctor'])->name('connections.doctor');
@@ -155,9 +157,12 @@ Route::middleware(['auth:sanctum', 'ability:' . TokenAbilityEnum::ACCESS_TOKEN->
   Route::post('/chatbot/sessions/{session}/chat', [\App\Http\Controllers\ChatBot\MessageController::class, 'chat'])->name('chatbot.chat');
   Route::post('/chatbot/messages/{message}/reaction', [\App\Http\Controllers\ChatBot\MessageController::class, 'reactToMessage'])->name('chatbot.messages.reaction');
 
+  Route::get('/wheelchairs/{wheelchairId}/movement-status', [\App\Http\Controllers\WheelchairController::class, 'getMovementStatus'])->name('wheelchairs.movement_status_get');
+  Route::get('/wheelchairs/{wheelchairId}/trips', [\App\Http\Controllers\TripController::class, 'index'])->name('wheelchairs.trips.index');
   Route::post('/wheelchairs/{wheelchairId}/trips', [\App\Http\Controllers\TripController::class, 'startTrip'])->name('trips.start');
-  Route::get('/trips/{tripId}/movement-states', [\App\Http\Controllers\TripController::class, 'movementStates'])->name('trips.movement_states_get');
+  Route::get('/trips/{tripId}', [\App\Http\Controllers\TripController::class, 'show'])->name('trips.show');
   Route::post('/trips/{tripId}/end', [\App\Http\Controllers\TripController::class, 'endTrip'])->name('trips.end');
+  Route::post('/trips/{tripId}/fail', [\App\Http\Controllers\TripController::class, 'failTrip'])->name('trips.fail');
 
   // Dashboards
   Route::get('/dashboard/user', [\App\Http\Controllers\DashboardController::class, 'userDashboard'])->name('dashboard.user');
@@ -172,9 +177,11 @@ Route::middleware(['auth:sanctum', 'ability:' . TokenAbilityEnum::ACCESS_TOKEN->
 
 // IoT Routes (Hardware/Wheelchair)
 Route::middleware(['verify_wheelchair_api_key'])->group(function () {
-  Route::post('/trip/movement/update', [\App\Http\Controllers\TripController::class, 'updateMovementStatus'])->name('iot.trip.movement.update');
-  Route::post('/trip/events', [\App\Http\Controllers\EventController::class, 'storeTripEvent'])->name('iot.trip.events.store');
-  Route::post('/wheelchair/health', [\App\Http\Controllers\WheelchairController::class, 'updateCurrentVitalState'])->name('iot.wheelchair.health.update');
+  Route::post('/iot/movement/update', [\App\Http\Controllers\WheelchairController::class, 'updateMovementStatus'])->name('iot.wheelchair.movement.update');
+  Route::post('/iot/movement/events', [\App\Http\Controllers\EventController::class, 'storeTripEvent'])->name('iot.trip.events.store');
+  Route::post('/iot/trip/end', [\App\Http\Controllers\TripController::class, 'endTripIot'])->name('iot.trip.end');
+  Route::post('/iot/trip/fail', [\App\Http\Controllers\TripController::class, 'failTripIot'])->name('iot.trip.fail');
+  Route::post('/iot/health/update', [\App\Http\Controllers\WheelchairController::class, 'updateCurrentVitalState'])->name('iot.wheelchair.health.update');
   Route::post('/iot/floors/{floor}/map', [\App\Http\Controllers\IoT\MapController::class, 'store'])->name('iot.maps.store');
   Route::post('/iot/sensor-readings', [\App\Http\Controllers\SensorReadingController::class, 'store'])->name('iot.sensor_readings.store');
 });

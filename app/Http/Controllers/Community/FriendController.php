@@ -61,7 +61,7 @@ class FriendController extends ApiController
             return $this->errorResponse('Friend request already exists or you are already friends.', 400);
         }
 
-        Friendship::create([
+        $friendship = Friendship::create([
             'user_id' => $user->id,
             'friend_id' => $friendId,
             'status' => 'pending',
@@ -69,9 +69,11 @@ class FriendController extends ApiController
 
         broadcast(new FriendRequestReceived($user, $friendId));
 
-        $receiver->notify(new FriendRequestReceivedNotification($user));
+        // Let's pass the friendship ID to the notification if possible, but the notification class only takes $user right now.
+        // I will just return it in the response for now.
+        $receiver->notify(new FriendRequestReceivedNotification($user, $friendship->id));
 
-        return $this->successResponse('Friend request sent successfully.', 201);
+        return $this->successResponse('Friend request sent successfully.', 201, parameters: ['data' => $friendship]);
     }
 
     public function handle(HandleFriendRequest $request, User $user): JsonResponse
@@ -114,14 +116,14 @@ class FriendController extends ApiController
                     \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\RequestAcceptedMail($user, $me));
                 }
 
-                return $this->successResponse('Friend request accepted.');
+                return $this->successResponse('Friend request accepted.', parameters: ['data' => $friendship]);
             } catch (\Exception $e) {
                 DB::rollBack();
                 return $this->errorResponse('Error accepting request: ' . $e->getMessage(), 500);
             }
         } else {
             $friendship->delete();
-            return $this->successResponse('Friend request rejected.');
+            return $this->successResponse('Friend request rejected.', parameters: ['data' => $friendship]);
         }
     }
 

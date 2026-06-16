@@ -57,12 +57,13 @@ class LocationController extends ApiController
         $outdoorLocation = \Illuminate\Support\Facades\Cache::get('user_location_' . $user->id);
 
         $indoorLocation = null;
-        $wheelchair = $user->wheelchairs()->first();
-        if ($wheelchair && $wheelchair->x_coordinate !== null && $wheelchair->y_coordinate !== null) {
+        $wheelchair = $user->wheelchairs()->where('connection_state', 'online')->first() ?? $user->wheelchairs()->first();
+        if ($wheelchair && $wheelchair->current_floor_id) {
             $indoorLocation = [
-                'x' => $wheelchair->x_coordinate,
-                'y' => $wheelchair->y_coordinate,
-                'theta' => $wheelchair->theta,
+                'x' => $wheelchair->x_coordinate ?? 0,
+                'y' => $wheelchair->y_coordinate ?? 0,
+                'theta' => $wheelchair->theta ?? 0,
+                'floor_id' => $wheelchair->current_floor_id,
                 'updated_at' => $wheelchair->updated_at,
             ];
         }

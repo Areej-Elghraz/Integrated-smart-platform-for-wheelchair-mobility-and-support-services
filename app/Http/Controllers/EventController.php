@@ -65,9 +65,14 @@ class EventController extends ApiController
         }
 
         // Otherwise create new event
+        // Auto-detect active trip
+        $activeTrip = \App\Models\Trip::where('wheelchair_id', $wheelchair->id)
+            ->where('status', 'started')
+            ->first();
+
         $event = Event::create([
             'wheelchair_id' => $wheelchair->id,
-            'trip_id' => $validated['trip_id'] ?? null,
+            'trip_id' => $activeTrip ? $activeTrip->id : null,
             'type' => $validated['type'],
             'severity' => $validated['severity'],
             'message' => $validated['message'],
@@ -77,10 +82,9 @@ class EventController extends ApiController
 
         broadcast(new WheelchairEventOccurred($event));
 
-        // Trigger Dashboard Broadcast
+        // Trigger Dashboard Broadcast (Lightweight)
         if ($wheelchair->user) {
-            $dashboardData = \App\Http\Controllers\DashboardController::getDashboardData($wheelchair->user);
-            broadcast(new \App\Events\DashboardUpdated($wheelchair->user->id, 'user_dashboard', $dashboardData));
+            broadcast(new \App\Events\DashboardUpdated($wheelchair->user->id, 'user_dashboard', ['action' => 'refresh_required']));
         }
 
         return $this->successResponse('Event stored successfully.', parameters: ['data' => $event]);

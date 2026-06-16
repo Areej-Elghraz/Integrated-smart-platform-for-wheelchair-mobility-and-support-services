@@ -71,18 +71,17 @@ class ConnectionRequestController extends ApiController
             return $this->errorResponse('A request already exists.', 400);
         }
 
-        ConnectionRequest::create([
+        $connectionRequest = ConnectionRequest::create([
             'sender_id' => $sender->id,
             'receiver_id' => $receiver->id,
             'connection_type' => $type,
             'status' => 'pending',
         ]);
 
-        // Send notification to receiver (could be a specific ConnectionRequestNotification)
-        // For now we assume a generic or similar behavior to FriendRequest
-        $receiver->notify(new \App\Notifications\DatabaseNotification\ConnectionRequestReceivedNotification($sender, $type));
+        // Send notification to receiver
+        $receiver->notify(new \App\Notifications\DatabaseNotification\ConnectionRequestReceivedNotification($sender, $type, $connectionRequest->id));
 
-        return $this->successResponse('Connection request sent successfully.', 201);
+        return $this->successResponse('Connection request sent successfully.', 201, parameters: ['data' => $connectionRequest]);
     }
 
     public function handleRequest(Request $request, ConnectionRequest $connectionRequest)
@@ -138,14 +137,14 @@ class ConnectionRequestController extends ApiController
                     \Illuminate\Support\Facades\Mail::to($sender->email)->send(new \App\Mail\RequestAcceptedMail($sender, $user));
                 } catch (\Exception $e) {}
 
-                return $this->successResponse('Connection request accepted.');
+                return $this->successResponse('Connection request accepted.', parameters: ['data' => $connectionRequest]);
             } catch (\Exception $e) {
                 DB::rollBack();
                 return $this->errorResponse('Error accepting request: ' . $e->getMessage(), 500);
             }
         } else {
             $connectionRequest->update(['status' => 'rejected']);
-            return $this->successResponse('Connection request rejected.');
+            return $this->successResponse('Connection request rejected.', parameters: ['data' => $connectionRequest]);
         }
     }
 
@@ -174,5 +173,32 @@ class ConnectionRequestController extends ApiController
         }
         $doctor = $user->connectedDoctor;
         return $this->successResponse('Connected doctor retrieved.', parameters: ['data' => $doctor]);
+    }
+
+    public function removeConnection(Request $request, User $connectedUser)
+    {
+        $me = $request->user();
+        
+        $connection = ConnectionRequest::where(function($q) use ($me, $connectedUser) {
+            $q->where('sender_id', $me->id)->where('receiver_id', $connectedUser->id);
+        })->orWhere(function($q) use ($me, $connectedUser) {
+            $q->where('sender_id', $connectedUser->id)->where('receiver_id', $me->id);
+        })->first();
+        
+        if (!$connection) {
+            return $this->errorResponse('Connection not found.', 404);
+        }
+        
+        $connection->delete();
+        
+        // Also delete friendship if exists
+        $friendship = Friendship::where(function($q) use ($me, $connectedUser) {
+            $q->where('user_id', $me->id)->where('friend_id', $connectedUser->id);
+        })->orWhere(function($q) use ($me, $connectedUser) {
+            $q->where('user_id', $connectedUser->id)->where('friend_id', $me->id);
+        })->first();
+        if ($friendship) $friendship->delete();
+
+        return $this->successResponse('Connection removed successfully.');
     }
 }

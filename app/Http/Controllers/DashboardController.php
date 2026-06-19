@@ -16,83 +16,65 @@ class DashboardController extends ApiController
         $wheelchairIds = $wheelchairs->pluck('id');
 
         // 1. Current Vital Data & AI Recommendation
-        $aiData = \App\Models\AiRecommendation::whereIn('wheelchair_id', $wheelchairIds)->latest()->first();
+        $aiData = null;
         $currentVitals = null;
-        if ($aiData) {
-            $currentVitals = [
-                'heart' => [
-                    'value' => $aiData->heart_rate,
-                    'status' => $aiData->heart_rate_status
-                ],
-                'temperature' => [
-                    'value' => $aiData->temperature,
-                    'status' => $aiData->temperature_status
-                ],
-                'obstacle' => [
-                    'movement' => 'movement', // or from type
-                    'mpu_angle' => $aiData->mpu_angle,
-                    'status' => $aiData->fall_status
-                ]
-            ];
-            // // Try Redis first for real-time data (before 5-minute MySQL sync)
-            // $aiData = null;
-            // $currentVitals = null;
 
-            // foreach ($wheelchairIds as $wId) {
-            //     $cachedVital = null;
-            //     try {
-            //         $cachedVital = \Illuminate\Support\Facades\Redis::get("latest_vital_state_{$wId}");
-            //     } catch (\Exception $e) {
-            //         // Redis not available, skip
-            //     }
+        // Try Redis first for real-time data (before 5-minute MySQL sync)
+        foreach ($wheelchairIds as $wId) {
+            $cachedVital = null;
+            try {
+                $cachedVital = \Illuminate\Support\Facades\Redis::get("latest_vital_state_{$wId}");
+            } catch (\Exception $e) {
+                // Redis not available, skip
+            }
 
-            //     if ($cachedVital) {
-            //         $parsed = json_decode($cachedVital);
-            //         if ($parsed) {
-            //             $currentVitals = [
-            //                 'heart' => [
-            //                     'value' => $parsed->heart_rate ?? null,
-            //                     'status' => $parsed->heart_rate_status ?? null
-            //                 ],
-            //                 'temperature' => [
-            //                     'value' => $parsed->temperature ?? null,
-            //                     'status' => $parsed->temperature_status ?? null
-            //                 ],
-            //                 'obstacle' => [
-            //                     'movement' => 'movement',
-            //                     'mpu_angle' => $parsed->mpu_angle ?? null,
-            //                     'status' => $parsed->fall_status ?? null
-            //                 ]
-            //             ];
-            //             // Build aiData-like object for recommendation section
-            //             $aiData = $parsed;
-            //             break;
-            //         }
-            //     }
+            if ($cachedVital) {
+                $parsed = json_decode($cachedVital);
+                if ($parsed) {
+                    $currentVitals = [
+                        'heart' => [
+                            'value' => $parsed->heart_rate ?? null,
+                            'status' => $parsed->heart_rate_status ?? null
+                        ],
+                        'temperature' => [
+                            'value' => $parsed->temperature ?? null,
+                            'status' => $parsed->temperature_status ?? null
+                        ],
+                        'obstacle' => [
+                            'movement' => 'movement',
+                            'mpu_angle' => $parsed->mpu_angle ?? null,
+                            'status' => $parsed->fall_status ?? null
+                        ]
+                    ];
+                    // Build aiData-like object for recommendation section
+                    $aiData = $parsed;
+                    break;
+                }
+            }
         }
 
-        // // Fallback to MySQL if Redis had no data
-        // if (!$currentVitals) {
-        //     $aiData = \App\Models\AiRecommendation::whereIn('wheelchair_id', $wheelchairIds)->latest()->first();
+        // Fallback to MySQL if Redis had no data
+        if (!$currentVitals) {
+            $aiData = \App\Models\AiRecommendation::whereIn('wheelchair_id', $wheelchairIds)->latest()->first();
 
-        //     if ($aiData) {
-        //         $currentVitals = [
-        //             'heart' => [
-        //                 'value' => $aiData->heart_rate,
-        //                 'status' => $aiData->heart_rate_status
-        //             ],
-        //             'temperature' => [
-        //                 'value' => $aiData->temperature,
-        //                 'status' => $aiData->temperature_status
-        //             ],
-        //             'obstacle' => [
-        //                 'movement' => 'movement',
-        //                 'mpu_angle' => $aiData->mpu_angle,
-        //                 'status' => $aiData->fall_status
-        //             ]
-        //         ];
-        //     }
-        // }
+            if ($aiData) {
+                $currentVitals = [
+                    'heart' => [
+                        'value' => $aiData->heart_rate,
+                        'status' => $aiData->heart_rate_status
+                    ],
+                    'temperature' => [
+                        'value' => $aiData->temperature,
+                        'status' => $aiData->temperature_status
+                    ],
+                    'obstacle' => [
+                        'movement' => 'movement',
+                        'mpu_angle' => $aiData->mpu_angle,
+                        'status' => $aiData->fall_status
+                    ]
+                ];
+            }
+        }
 
         // 2. Overviews (Trends)
         $dateFilter = now();
@@ -127,19 +109,11 @@ class DashboardController extends ApiController
             }
         }
 
-        // // 3. Recent Alerts (Latest events regardless of type)
-        // $recentAlerts = Event::whereIn('wheelchair_id', $wheelchairIds)
-        //     ->latest()
-        //     ->take(10)
-        //     ->get();
-
-        // 3. Recent Alerts (Latest for each type)
-        $recentAlerts = [];
-        $eventTypes = ['heart', 'temperature', 'mpu_monitoring', 'system', 'safety', 'navigation'];
-        foreach ($eventTypes as $type) {
-            $alert = Event::whereIn('wheelchair_id', $wheelchairIds)->where('type', $type)->latest()->first();
-            if ($alert) $recentAlerts[$type] = $alert;
-        }
+        // 3. Recent Alerts (Latest events regardless of type)
+        $recentAlerts = Event::whereIn('wheelchair_id', $wheelchairIds)
+            ->latest()
+            ->take(10)
+            ->get();
 
         // 4. Last Visited Places (Moved to PlaceController@lastVisited)
         // 4. Last Visited Places (Only for Patient & Companion)

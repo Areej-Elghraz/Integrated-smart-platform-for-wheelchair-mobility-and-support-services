@@ -22,7 +22,7 @@ class UpdateDataController extends ApiController
 
         $user->update([
             'name'                 => $request->name ?? $user->name,
-            'email'                => $request->email ?? $user->email,
+            'username'             => $request->username ?? $user->username,
             'phone'                => $request->phone ?? $user->phone,
             'gender'               => $request->gender ?? $user->gender,
             'birth_date'           => $request->birth_date ?? $user->birth_date,

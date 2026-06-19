@@ -152,7 +152,7 @@ class ConnectionRequestController extends ApiController
     public function indexPending(Request $request)
     {
         $user = $request->user();
-        $pending = ConnectionRequest::with('sender')->where('receiver_id', $user->id)->where('status', 'pending')->get();
+        $pending = ConnectionRequest::with('sender')->where('receiver_id', $user->id)->orWhere('sender_id', $user->id)->where('status', 'pending')->get();
         return $this->successResponse('Pending connection requests retrieved.', parameters: ['data' => $pending]);
     }
 

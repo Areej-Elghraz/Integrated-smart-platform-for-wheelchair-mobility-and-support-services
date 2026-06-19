@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Profile;
 use App\Http\Controllers\ApiController;
 use App\Http\Requests\Profile\UpdateDataRequest;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 
 class UpdateDataController extends ApiController
@@ -36,6 +37,13 @@ class UpdateDataController extends ApiController
             $user->medicalConditions()->sync($request->medical_condition_ids);
         }
 
-        return $this->successResponse(message: __('auth.profile_data_changed_success'));
+        $user = Auth::user()->load([
+            'medicalConditions',
+            'friends',
+            'organizations',
+            'wheelchairs'
+        ]);
+
+        return $this->successResponse(message: __('auth.profile_data_changed_success'), parameters: ['data' => $user]);
     }
 }

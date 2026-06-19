@@ -17,7 +17,7 @@ class StoreRequest extends FormRequest
             'name'            => 'required|string|max:255',
             'parent_id'       => 'nullable|exists:categories,id',
             'organization_id' => 'nullable|exists:organizations,id',
-            'image'           => 'required|image|mimes:png,jpg,jpeg,gif|max:2048',
+            // 'image'           => 'required|image|mimes:png,jpg,jpeg,gif|max:2048',
         ];
     }
 }

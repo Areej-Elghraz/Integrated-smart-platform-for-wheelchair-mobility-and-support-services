@@ -15,12 +15,12 @@ class ConnectionRequestController extends ApiController
     public function sendRequest(Request $request)
     {
         $request->validate([
-            'user_id' => 'required|exists:users,id',
+            'username' => 'required|exists:users,username',
             'connection_type' => 'required|in:companion,doctor',
         ]);
 
         $sender = $request->user();
-        $receiver = User::find($request->user_id);
+        $receiver = User::where('username', $request->username)->first();
         $type = $request->connection_type;
 
         if ($sender->id === $receiver->id) {
@@ -43,7 +43,7 @@ class ConnectionRequestController extends ApiController
             if ($existingAccepted) {
                 return $this->errorResponse('A companion can only follow one user.', 400);
             }
-        } 
+        }
         // Logic for Doctor
         else if ($type === 'doctor') {
             if (!$sender->isUser()) {
@@ -119,7 +119,7 @@ class ConnectionRequestController extends ApiController
                         'status' => 'accepted',
                         'accepted_at' => now(),
                     ]);
-                    
+
                     Conversation::firstOrCreate([
                         'user_one_id' => min($connectionRequest->sender_id, $connectionRequest->receiver_id),
                         'user_two_id' => max($connectionRequest->sender_id, $connectionRequest->receiver_id),
@@ -135,7 +135,8 @@ class ConnectionRequestController extends ApiController
                 $sender->notify(new \App\Notifications\DatabaseNotification\ConnectionRequestAcceptedNotification($user, $connectionRequest->connection_type));
                 try {
                     \Illuminate\Support\Facades\Mail::to($sender->email)->send(new \App\Mail\RequestAcceptedMail($sender, $user));
-                } catch (\Exception $e) {}
+                } catch (\Exception $e) {
+                }
 
                 return $this->successResponse('Connection request accepted.', parameters: ['data' => $connectionRequest]);
             } catch (\Exception $e) {
@@ -178,23 +179,23 @@ class ConnectionRequestController extends ApiController
     public function removeConnection(Request $request, User $connectedUser)
     {
         $me = $request->user();
-        
-        $connection = ConnectionRequest::where(function($q) use ($me, $connectedUser) {
+
+        $connection = ConnectionRequest::where(function ($q) use ($me, $connectedUser) {
             $q->where('sender_id', $me->id)->where('receiver_id', $connectedUser->id);
-        })->orWhere(function($q) use ($me, $connectedUser) {
+        })->orWhere(function ($q) use ($me, $connectedUser) {
             $q->where('sender_id', $connectedUser->id)->where('receiver_id', $me->id);
         })->first();
-        
+
         if (!$connection) {
             return $this->errorResponse('Connection not found.', 404);
         }
-        
+
         $connection->delete();
-        
+
         // Also delete friendship if exists
-        $friendship = Friendship::where(function($q) use ($me, $connectedUser) {
+        $friendship = Friendship::where(function ($q) use ($me, $connectedUser) {
             $q->where('user_id', $me->id)->where('friend_id', $connectedUser->id);
-        })->orWhere(function($q) use ($me, $connectedUser) {
+        })->orWhere(function ($q) use ($me, $connectedUser) {
             $q->where('user_id', $connectedUser->id)->where('friend_id', $me->id);
         })->first();
         if ($friendship) $friendship->delete();

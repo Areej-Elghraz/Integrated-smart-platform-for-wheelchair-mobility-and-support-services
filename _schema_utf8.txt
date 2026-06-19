@@ -1,0 +1,986 @@
+=== ai_recommendations ===
+CREATE TABLE `ai_recommendations` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `wheelchair_id` bigint(20) unsigned NOT NULL,
+  `heart_rate` double DEFAULT NULL,
+  `heart_rate_status` enum('low','medium','critical') NOT NULL DEFAULT 'low',
+  `temperature` double DEFAULT NULL,
+  `temperature_status` enum('low','medium','critical') NOT NULL DEFAULT 'low',
+  `mpu_angle` double DEFAULT NULL,
+  `fall_status` enum('low','medium','critical') NOT NULL DEFAULT 'low',
+  `type` varchar(255) DEFAULT NULL,
+  `risk_level` enum('low','medium','critical') NOT NULL DEFAULT 'low',
+  `reason` text DEFAULT NULL,
+  `recommendation` text DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ai_recommendations_wheelchair_id_foreign` (`wheelchair_id`),
+  CONSTRAINT `ai_recommendations_wheelchair_id_foreign` FOREIGN KEY (`wheelchair_id`) REFERENCES `wheelchairs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== ai_status_logs ===
+CREATE TABLE `ai_status_logs` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `e_chair_id` bigint(20) unsigned NOT NULL,
+  `event_type` varchar(255) NOT NULL,
+  `component_name` varchar(255) NOT NULL,
+  `message` text DEFAULT NULL,
+  `decision_context` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`decision_context`)),
+  `details` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`details`)),
+  `timestamp_ms` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ai_status_logs_e_chair_id_foreign` (`e_chair_id`),
+  CONSTRAINT `ai_status_logs_e_chair_id_foreign` FOREIGN KEY (`e_chair_id`) REFERENCES `e_chairs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== audit_logs ===
+CREATE TABLE `audit_logs` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) unsigned DEFAULT NULL,
+  `action` varchar(255) NOT NULL,
+  `model_type` varchar(255) DEFAULT NULL,
+  `model_id` bigint(20) unsigned DEFAULT NULL,
+  `details` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`details`)),
+  `ip_address` varchar(255) DEFAULT NULL,
+  `user_agent` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `audit_logs_user_id_foreign` (`user_id`),
+  CONSTRAINT `audit_logs_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== buildings ===
+CREATE TABLE `buildings` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `organization_id` bigint(20) unsigned NOT NULL,
+  `image` varchar(255) DEFAULT NULL,
+  `latitude` double DEFAULT NULL,
+  `longitude` double DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `owner_id` bigint(20) unsigned DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `buildings_organization_id_foreign` (`organization_id`),
+  KEY `buildings_owner_id_foreign` (`owner_id`),
+  CONSTRAINT `buildings_organization_id_foreign` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `buildings_owner_id_foreign` FOREIGN KEY (`owner_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== cache ===
+CREATE TABLE `cache` (
+  `key` varchar(255) NOT NULL,
+  `value` mediumtext NOT NULL,
+  `expiration` int(11) NOT NULL,
+  PRIMARY KEY (`key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== cache_locks ===
+CREATE TABLE `cache_locks` (
+  `key` varchar(255) NOT NULL,
+  `owner` varchar(255) NOT NULL,
+  `expiration` int(11) NOT NULL,
+  PRIMARY KEY (`key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== categories ===
+CREATE TABLE `categories` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `parent_id` bigint(20) unsigned DEFAULT NULL,
+  `owner_id` bigint(20) unsigned DEFAULT NULL,
+  `image` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `categories_parent_id_foreign` (`parent_id`),
+  KEY `categories_owner_id_foreign` (`owner_id`),
+  CONSTRAINT `categories_owner_id_foreign` FOREIGN KEY (`owner_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `categories_parent_id_foreign` FOREIGN KEY (`parent_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== category_organization ===
+CREATE TABLE `category_organization` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `category_id` bigint(20) unsigned NOT NULL,
+  `organization_id` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `categories_organization_unique` (`category_id`,`organization_id`),
+  KEY `category_organization_organization_id_foreign` (`organization_id`),
+  CONSTRAINT `category_organization_category_id_foreign` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `category_organization_organization_id_foreign` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== category_place ===
+CREATE TABLE `category_place` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `category_id` bigint(20) unsigned NOT NULL,
+  `place_id` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `category_place_category_id_foreign` (`category_id`),
+  KEY `category_place_place_id_foreign` (`place_id`),
+  CONSTRAINT `category_place_category_id_foreign` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `category_place_place_id_foreign` FOREIGN KEY (`place_id`) REFERENCES `places` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== chat_messages ===
+CREATE TABLE `chat_messages` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `chat_session_id` bigint(20) unsigned NOT NULL,
+  `sender_type` enum('user','bot') NOT NULL DEFAULT 'user',
+  `content` text DEFAULT NULL,
+  `attachments` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`attachments`)),
+  `reaction` enum('like','dislike') DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `chat_messages_chat_session_id_foreign` (`chat_session_id`),
+  CONSTRAINT `chat_messages_chat_session_id_foreign` FOREIGN KEY (`chat_session_id`) REFERENCES `chat_sessions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== chat_sessions ===
+CREATE TABLE `chat_sessions` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) unsigned NOT NULL,
+  `title` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `chat_sessions_user_id_foreign` (`user_id`),
+  CONSTRAINT `chat_sessions_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== cities ===
+CREATE TABLE `cities` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `country_id` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `cities_name_country_id_unique` (`name`,`country_id`),
+  KEY `cities_country_id_foreign` (`country_id`),
+  CONSTRAINT `cities_country_id_foreign` FOREIGN KEY (`country_id`) REFERENCES `countries` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== comments ===
+CREATE TABLE `comments` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) unsigned NOT NULL,
+  `commentable_type` varchar(255) NOT NULL,
+  `commentable_id` bigint(20) unsigned NOT NULL,
+  `content` text NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `parent_id` bigint(20) unsigned DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `comments_user_id_foreign` (`user_id`),
+  KEY `comments_commentable_type_commentable_id_index` (`commentable_type`,`commentable_id`),
+  KEY `comments_parent_id_foreign` (`parent_id`),
+  CONSTRAINT `comments_parent_id_foreign` FOREIGN KEY (`parent_id`) REFERENCES `comments` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `comments_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== connection_requests ===
+CREATE TABLE `connection_requests` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `sender_id` bigint(20) unsigned NOT NULL,
+  `receiver_id` bigint(20) unsigned NOT NULL,
+  `connection_type` enum('companion','doctor') NOT NULL,
+  `status` enum('pending','accepted','rejected') NOT NULL DEFAULT 'pending',
+  `accepted_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_connection_request` (`sender_id`,`receiver_id`,`connection_type`),
+  KEY `connection_requests_receiver_id_foreign` (`receiver_id`),
+  CONSTRAINT `connection_requests_receiver_id_foreign` FOREIGN KEY (`receiver_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `connection_requests_sender_id_foreign` FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== conversations ===
+CREATE TABLE `conversations` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_one_id` bigint(20) unsigned NOT NULL,
+  `user_two_id` bigint(20) unsigned NOT NULL,
+  `deleted_by_user_one` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted_by_user_two` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `conversations_user_one_id_foreign` (`user_one_id`),
+  KEY `conversations_user_two_id_foreign` (`user_two_id`),
+  CONSTRAINT `conversations_user_one_id_foreign` FOREIGN KEY (`user_one_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `conversations_user_two_id_foreign` FOREIGN KEY (`user_two_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== countries ===
+CREATE TABLE `countries` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `countries_name_unique` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== current_safety_states ===
+CREATE TABLE `current_safety_states` (
+  `wheelchair_id` bigint(20) unsigned NOT NULL,
+  `fall_detected` tinyint(1) NOT NULL DEFAULT 0,
+  `abnormal_posture` tinyint(1) NOT NULL DEFAULT 0,
+  `sudden_motion_detected` tinyint(1) NOT NULL DEFAULT 0,
+  `status` enum('normal','warning','critical') NOT NULL DEFAULT 'normal',
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`wheelchair_id`),
+  CONSTRAINT `current_safety_states_wheelchair_id_foreign` FOREIGN KEY (`wheelchair_id`) REFERENCES `wheelchairs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== decision_trace_logs ===
+CREATE TABLE `decision_trace_logs` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `event_type` varchar(255) NOT NULL,
+  `event_id` bigint(20) unsigned NOT NULL,
+  `decisions` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`decisions`)),
+  `reasoning` text DEFAULT NULL,
+  `latency_ms` double NOT NULL,
+  `timestamp_ms` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== device_status ===
+CREATE TABLE `device_status` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `e_chair_id` bigint(20) unsigned NOT NULL,
+  `device_name` varchar(255) NOT NULL,
+  `connection_status` varchar(255) NOT NULL DEFAULT 'offline',
+  `firmware_version` varchar(255) DEFAULT NULL,
+  `last_heartbeat` timestamp NOT NULL DEFAULT current_timestamp(),
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `device_status_e_chair_id_foreign` (`e_chair_id`),
+  CONSTRAINT `device_status_e_chair_id_foreign` FOREIGN KEY (`e_chair_id`) REFERENCES `e_chairs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== e_chairs ===
+CREATE TABLE `e_chairs` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `serial_number` varchar(255) NOT NULL,
+  `model` varchar(255) DEFAULT NULL,
+  `status` varchar(255) NOT NULL DEFAULT 'inactive',
+  `assigned_to_user_id` bigint(20) unsigned DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `e_chairs_serial_number_unique` (`serial_number`),
+  KEY `e_chairs_assigned_to_user_id_foreign` (`assigned_to_user_id`),
+  CONSTRAINT `e_chairs_assigned_to_user_id_foreign` FOREIGN KEY (`assigned_to_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== emergency_events ===
+CREATE TABLE `emergency_events` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `e_chair_id` bigint(20) unsigned NOT NULL,
+  `trip_id` bigint(20) unsigned DEFAULT NULL,
+  `event_type` varchar(255) NOT NULL,
+  `source_classification` varchar(255) NOT NULL DEFAULT 'hardware',
+  `location` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`location`)),
+  `severity` varchar(255) NOT NULL DEFAULT 'critical',
+  `resolved_at` timestamp NULL DEFAULT NULL,
+  `timestamp_ms` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `emergency_events_e_chair_id_foreign` (`e_chair_id`),
+  KEY `emergency_events_trip_id_foreign` (`trip_id`),
+  CONSTRAINT `emergency_events_e_chair_id_foreign` FOREIGN KEY (`e_chair_id`) REFERENCES `e_chairs` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `emergency_events_trip_id_foreign` FOREIGN KEY (`trip_id`) REFERENCES `trips` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== events ===
+CREATE TABLE `events` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `wheelchair_id` bigint(20) unsigned NOT NULL,
+  `trip_id` bigint(20) unsigned DEFAULT NULL,
+  `type` enum('health','obstacle','sos','battery') NOT NULL,
+  `severity` enum('low','medium','critical') NOT NULL DEFAULT 'low',
+  `message` text NOT NULL,
+  `data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`data`)),
+  `event_source` enum('ai','system') NOT NULL DEFAULT 'ai',
+  `read_at` timestamp NULL DEFAULT NULL,
+  `resolved_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `events_wheelchair_id_foreign` (`wheelchair_id`),
+  KEY `events_trip_id_foreign` (`trip_id`),
+  CONSTRAINT `events_trip_id_foreign` FOREIGN KEY (`trip_id`) REFERENCES `trips` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `events_wheelchair_id_foreign` FOREIGN KEY (`wheelchair_id`) REFERENCES `wheelchairs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== failed_jobs ===
+CREATE TABLE `failed_jobs` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(255) NOT NULL,
+  `connection` text NOT NULL,
+  `queue` text NOT NULL,
+  `payload` longtext NOT NULL,
+  `exception` longtext NOT NULL,
+  `failed_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `failed_jobs_uuid_unique` (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== favorites ===
+CREATE TABLE `favorites` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) unsigned NOT NULL,
+  `favoritable_type` varchar(255) NOT NULL,
+  `favoritable_id` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_favoritable_unique` (`user_id`,`favoritable_id`,`favoritable_type`),
+  KEY `favorites_favoritable_type_favoritable_id_index` (`favoritable_type`,`favoritable_id`),
+  CONSTRAINT `favorites_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== floors ===
+CREATE TABLE `floors` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `number` int(11) NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `building_id` bigint(20) unsigned DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `floors_building_id_foreign` (`building_id`),
+  CONSTRAINT `floors_building_id_foreign` FOREIGN KEY (`building_id`) REFERENCES `buildings` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== health_alerts ===
+CREATE TABLE `health_alerts` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `health_prediction_id` bigint(20) unsigned NOT NULL,
+  `user_id` bigint(20) unsigned NOT NULL,
+  `trip_id` bigint(20) unsigned DEFAULT NULL,
+  `status` varchar(255) NOT NULL DEFAULT 'open',
+  `severity` varchar(255) NOT NULL DEFAULT 'info',
+  `timestamp_ms` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `health_alerts_health_prediction_id_foreign` (`health_prediction_id`),
+  KEY `health_alerts_user_id_foreign` (`user_id`),
+  KEY `health_alerts_trip_id_foreign` (`trip_id`),
+  CONSTRAINT `health_alerts_health_prediction_id_foreign` FOREIGN KEY (`health_prediction_id`) REFERENCES `health_predictions` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `health_alerts_trip_id_foreign` FOREIGN KEY (`trip_id`) REFERENCES `trips` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `health_alerts_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== health_predictions ===
+CREATE TABLE `health_predictions` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `e_chair_id` bigint(20) unsigned NOT NULL,
+  `prediction_type` varchar(255) NOT NULL,
+  `confidence` double NOT NULL,
+  `is_critical` tinyint(1) NOT NULL DEFAULT 0,
+  `source_model` varchar(255) NOT NULL,
+  `prediction_window_ms` int(11) DEFAULT NULL,
+  `details` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`details`)),
+  `timestamp_ms` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `health_predictions_e_chair_id_foreign` (`e_chair_id`),
+  CONSTRAINT `health_predictions_e_chair_id_foreign` FOREIGN KEY (`e_chair_id`) REFERENCES `e_chairs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== health_sensor_logs ===
+CREATE TABLE `health_sensor_logs` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `e_chair_id` bigint(20) unsigned NOT NULL,
+  `type` varchar(255) NOT NULL,
+  `value` double NOT NULL,
+  `unit` varchar(255) DEFAULT NULL,
+  `sensor_status` varchar(255) NOT NULL DEFAULT 'valid',
+  `timestamp_ms` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `health_sensor_logs_e_chair_id_foreign` (`e_chair_id`),
+  CONSTRAINT `health_sensor_logs_e_chair_id_foreign` FOREIGN KEY (`e_chair_id`) REFERENCES `e_chairs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== hidden_posts ===
+CREATE TABLE `hidden_posts` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) unsigned NOT NULL,
+  `post_id` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `hidden_posts_user_id_post_id_unique` (`user_id`,`post_id`),
+  KEY `hidden_posts_post_id_foreign` (`post_id`),
+  CONSTRAINT `hidden_posts_post_id_foreign` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `hidden_posts_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== incident_reports ===
+CREATE TABLE `incident_reports` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `event_type` varchar(255) NOT NULL,
+  `event_id` bigint(20) unsigned NOT NULL,
+  `description` text DEFAULT NULL,
+  `severity` varchar(255) NOT NULL DEFAULT 'medium',
+  `status` varchar(255) NOT NULL DEFAULT 'open',
+  `metadata` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`metadata`)),
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== job_batches ===
+CREATE TABLE `job_batches` (
+  `id` varchar(255) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `total_jobs` int(11) NOT NULL,
+  `pending_jobs` int(11) NOT NULL,
+  `failed_jobs` int(11) NOT NULL,
+  `failed_job_ids` longtext NOT NULL,
+  `options` mediumtext DEFAULT NULL,
+  `cancelled_at` int(11) DEFAULT NULL,
+  `created_at` int(11) NOT NULL,
+  `finished_at` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== jobs ===
+CREATE TABLE `jobs` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `queue` varchar(255) NOT NULL,
+  `payload` longtext NOT NULL,
+  `attempts` tinyint(3) unsigned NOT NULL,
+  `reserved_at` int(10) unsigned DEFAULT NULL,
+  `available_at` int(10) unsigned NOT NULL,
+  `created_at` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `jobs_queue_index` (`queue`)
+) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== likes ===
+CREATE TABLE `likes` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) unsigned NOT NULL,
+  `likeable_type` varchar(255) NOT NULL,
+  `likeable_id` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `likes_user_id_likeable_id_likeable_type_unique` (`user_id`,`likeable_id`,`likeable_type`),
+  KEY `likes_likeable_type_likeable_id_index` (`likeable_type`,`likeable_id`),
+  CONSTRAINT `likes_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== maps ===
+CREATE TABLE `maps` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `floor_id` bigint(20) unsigned NOT NULL,
+  `map_file` varchar(255) NOT NULL,
+  `extension` varchar(255) NOT NULL,
+  `width` double NOT NULL,
+  `height` double NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `yaml_file` varchar(255) DEFAULT NULL,
+  `yaml_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`yaml_data`)),
+  PRIMARY KEY (`id`),
+  KEY `maps_floor_id_foreign` (`floor_id`),
+  CONSTRAINT `maps_floor_id_foreign` FOREIGN KEY (`floor_id`) REFERENCES `floors` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== medical_conditions ===
+CREATE TABLE `medical_conditions` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `name` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`name`)),
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== messages ===
+CREATE TABLE `messages` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `conversation_id` bigint(20) unsigned NOT NULL,
+  `sender_id` bigint(20) unsigned NOT NULL,
+  `type` enum('text','image','text_image','voice') NOT NULL DEFAULT 'text',
+  `content` text DEFAULT NULL,
+  `attachment` varchar(255) DEFAULT NULL,
+  `is_read` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted_by_sender` tinyint(1) NOT NULL DEFAULT 0,
+  `deleted_by_receiver` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `messages_conversation_id_foreign` (`conversation_id`),
+  KEY `messages_sender_id_foreign` (`sender_id`),
+  CONSTRAINT `messages_conversation_id_foreign` FOREIGN KEY (`conversation_id`) REFERENCES `conversations` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `messages_sender_id_foreign` FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== migrations ===
+CREATE TABLE `migrations` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `migration` varchar(255) NOT NULL,
+  `batch` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=81 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== notifications ===
+CREATE TABLE `notifications` (
+  `id` char(36) NOT NULL,
+  `type` varchar(255) NOT NULL,
+  `notifiable_type` varchar(255) NOT NULL,
+  `notifiable_id` bigint(20) unsigned NOT NULL,
+  `data` text NOT NULL,
+  `read_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `notifications_notifiable_type_notifiable_id_index` (`notifiable_type`,`notifiable_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== obstacle_logs ===
+CREATE TABLE `obstacle_logs` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `e_chair_id` bigint(20) unsigned NOT NULL,
+  `location` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`location`)),
+  `obstacle_type` varchar(255) DEFAULT NULL,
+  `distance_to_obstacle` double DEFAULT NULL,
+  `timestamp_ms` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `obstacle_logs_e_chair_id_foreign` (`e_chair_id`),
+  CONSTRAINT `obstacle_logs_e_chair_id_foreign` FOREIGN KEY (`e_chair_id`) REFERENCES `e_chairs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== organizations ===
+CREATE TABLE `organizations` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `owner_id` bigint(20) unsigned DEFAULT NULL,
+  `country_id` bigint(20) unsigned DEFAULT NULL,
+  `city_id` bigint(20) unsigned DEFAULT NULL,
+  `latitude` decimal(10,8) DEFAULT NULL,
+  `longitude` decimal(11,8) DEFAULT NULL,
+  `image` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `organizations_owner_id_foreign` (`owner_id`),
+  KEY `organizations_country_id_foreign` (`country_id`),
+  KEY `organizations_city_id_foreign` (`city_id`),
+  CONSTRAINT `organizations_city_id_foreign` FOREIGN KEY (`city_id`) REFERENCES `cities` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `organizations_country_id_foreign` FOREIGN KEY (`country_id`) REFERENCES `countries` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `organizations_owner_id_foreign` FOREIGN KEY (`owner_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== password_reset_tokens ===
+CREATE TABLE `password_reset_tokens` (
+  `email` varchar(255) NOT NULL,
+  `token` varchar(255) NOT NULL,
+  `times` tinyint(4) NOT NULL DEFAULT 0,
+  `verified` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== personal_access_tokens ===
+CREATE TABLE `personal_access_tokens` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `tokenable_type` varchar(255) NOT NULL,
+  `tokenable_id` bigint(20) unsigned NOT NULL,
+  `name` text NOT NULL,
+  `token` varchar(64) NOT NULL,
+  `abilities` text DEFAULT NULL,
+  `last_used_at` timestamp NULL DEFAULT NULL,
+  `expires_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `personal_access_tokens_token_unique` (`token`),
+  KEY `personal_access_tokens_tokenable_type_tokenable_id_index` (`tokenable_type`,`tokenable_id`),
+  KEY `personal_access_tokens_expires_at_index` (`expires_at`)
+) ENGINE=InnoDB AUTO_INCREMENT=96 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== places ===
+CREATE TABLE `places` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `owner_id` bigint(20) unsigned DEFAULT NULL,
+  `parent_place_id` bigint(20) unsigned DEFAULT NULL,
+  `floor_id` bigint(20) unsigned DEFAULT NULL,
+  `x` double DEFAULT NULL,
+  `y` double DEFAULT NULL,
+  `z` double DEFAULT NULL,
+  `rotation` double DEFAULT NULL,
+  `image` varchar(255) DEFAULT NULL,
+  `accessibility_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`accessibility_data`)),
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `points` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`points`)),
+  PRIMARY KEY (`id`),
+  KEY `places_owner_id_foreign` (`owner_id`),
+  KEY `places_parent_place_id_foreign` (`parent_place_id`),
+  KEY `places_floor_id_foreign` (`floor_id`),
+  CONSTRAINT `places_floor_id_foreign` FOREIGN KEY (`floor_id`) REFERENCES `floors` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `places_owner_id_foreign` FOREIGN KEY (`owner_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `places_parent_place_id_foreign` FOREIGN KEY (`parent_place_id`) REFERENCES `places` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== posts ===
+CREATE TABLE `posts` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) unsigned NOT NULL,
+  `content` text DEFAULT NULL,
+  `images` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`images`)),
+  `files` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`files`)),
+  `shared_post_id` bigint(20) unsigned DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `posts_user_id_foreign` (`user_id`),
+  KEY `posts_shared_post_id_foreign` (`shared_post_id`),
+  CONSTRAINT `posts_shared_post_id_foreign` FOREIGN KEY (`shared_post_id`) REFERENCES `posts` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `posts_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== reviews ===
+CREATE TABLE `reviews` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) unsigned NOT NULL,
+  `reviewable_type` varchar(255) NOT NULL,
+  `reviewable_id` bigint(20) unsigned NOT NULL,
+  `rating` tinyint(3) unsigned NOT NULL,
+  `comment` text DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `reviews_user_id_foreign` (`user_id`),
+  KEY `reviews_reviewable_type_reviewable_id_index` (`reviewable_type`,`reviewable_id`),
+  CONSTRAINT `reviews_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== safety_monitoring_logs ===
+CREATE TABLE `safety_monitoring_logs` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `wheelchair_id` bigint(20) unsigned NOT NULL,
+  `user_id` bigint(20) unsigned DEFAULT NULL,
+  `head_pitch` double DEFAULT NULL,
+  `head_roll` double DEFAULT NULL,
+  `chair_tilt_angle` double DEFAULT NULL,
+  `acceleration_force` double DEFAULT NULL,
+  `fall_detected` tinyint(1) NOT NULL DEFAULT 0,
+  `abnormal_posture` tinyint(1) NOT NULL DEFAULT 0,
+  `safety_status` enum('normal','warning','critical','emergency') NOT NULL DEFAULT 'normal',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `safety_monitoring_logs_wheelchair_id_foreign` (`wheelchair_id`),
+  KEY `safety_monitoring_logs_user_id_foreign` (`user_id`),
+  CONSTRAINT `safety_monitoring_logs_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `safety_monitoring_logs_wheelchair_id_foreign` FOREIGN KEY (`wheelchair_id`) REFERENCES `wheelchairs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== sensor_readings ===
+CREATE TABLE `sensor_readings` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `wheelchair_id` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `trip_id` bigint(20) unsigned DEFAULT NULL,
+  `heart_rate_min` double DEFAULT NULL,
+  `heart_rate_max` double DEFAULT NULL,
+  `heart_rate_avg` double DEFAULT NULL,
+  `temperature_min` double DEFAULT NULL,
+  `temperature_max` double DEFAULT NULL,
+  `temperature_avg` double DEFAULT NULL,
+  `mpu_angle_min` double DEFAULT NULL,
+  `mpu_angle_max` double DEFAULT NULL,
+  `mpu_angle_avg` double DEFAULT NULL,
+  `reading_time` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `sensor_readings_trip_id_foreign` (`trip_id`),
+  KEY `sensor_readings_wheelchair_id_reading_time_index` (`wheelchair_id`,`reading_time`),
+  CONSTRAINT `sensor_readings_trip_id_foreign` FOREIGN KEY (`trip_id`) REFERENCES `trips` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `sensor_readings_wheelchair_id_foreign` FOREIGN KEY (`wheelchair_id`) REFERENCES `wheelchairs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== sensor_readings_aggregated ===
+CREATE TABLE `sensor_readings_aggregated` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `wheelchair_id` bigint(20) unsigned NOT NULL,
+  `trip_id` bigint(20) unsigned DEFAULT NULL,
+  `heart_rate_min` double DEFAULT NULL,
+  `heart_rate_max` double DEFAULT NULL,
+  `heart_rate_avg` double DEFAULT NULL,
+  `temperature_min` double DEFAULT NULL,
+  `temperature_max` double DEFAULT NULL,
+  `temperature_avg` double DEFAULT NULL,
+  `mpu_angle_min` double DEFAULT NULL,
+  `mpu_angle_max` double DEFAULT NULL,
+  `mpu_angle_avg` double DEFAULT NULL,
+  `window_start` timestamp NULL DEFAULT NULL,
+  `window_end` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `sensor_readings_aggregated_trip_id_foreign` (`trip_id`),
+  KEY `sensor_readings_aggregated_wheelchair_id_window_start_index` (`wheelchair_id`,`window_start`),
+  CONSTRAINT `sensor_readings_aggregated_trip_id_foreign` FOREIGN KEY (`trip_id`) REFERENCES `trips` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `sensor_readings_aggregated_wheelchair_id_foreign` FOREIGN KEY (`wheelchair_id`) REFERENCES `wheelchairs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=157 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== sessions ===
+CREATE TABLE `sessions` (
+  `id` varchar(255) NOT NULL,
+  `user_id` bigint(20) unsigned DEFAULT NULL,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `user_agent` text DEFAULT NULL,
+  `payload` longtext NOT NULL,
+  `last_activity` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `sessions_user_id_index` (`user_id`),
+  KEY `sessions_last_activity_index` (`last_activity`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== support_messages ===
+CREATE TABLE `support_messages` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) unsigned DEFAULT NULL,
+  `name` varchar(255) DEFAULT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `phone` varchar(255) DEFAULT NULL,
+  `message` text NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `support_messages_user_id_foreign` (`user_id`),
+  CONSTRAINT `support_messages_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== trip_updates ===
+CREATE TABLE `trip_updates` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `trip_id` bigint(20) unsigned NOT NULL,
+  `update_type` varchar(255) NOT NULL,
+  `source` varchar(255) NOT NULL DEFAULT 'system',
+  `update_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`update_data`)),
+  `timestamp_ms` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `trip_updates_trip_id_foreign` (`trip_id`),
+  CONSTRAINT `trip_updates_trip_id_foreign` FOREIGN KEY (`trip_id`) REFERENCES `trips` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== trips ===
+CREATE TABLE `trips` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `wheelchair_id` bigint(20) unsigned NOT NULL,
+  `mode` enum('autonomous','manual') NOT NULL,
+  `status` enum('started','completed','failed') NOT NULL DEFAULT 'started',
+  `started_at` timestamp NULL DEFAULT NULL,
+  `ended_at` timestamp NULL DEFAULT NULL,
+  `place_id` bigint(20) unsigned DEFAULT NULL,
+  `start_x` double DEFAULT NULL,
+  `start_y` double DEFAULT NULL,
+  `end_x` double DEFAULT NULL,
+  `end_y` double DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `trips_wheelchair_id_foreign` (`wheelchair_id`),
+  KEY `trips_place_id_foreign` (`place_id`),
+  CONSTRAINT `trips_place_id_foreign` FOREIGN KEY (`place_id`) REFERENCES `places` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `trips_wheelchair_id_foreign` FOREIGN KEY (`wheelchair_id`) REFERENCES `wheelchairs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== user_friends ===
+CREATE TABLE `user_friends` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) unsigned NOT NULL,
+  `friend_id` bigint(20) unsigned NOT NULL,
+  `status` enum('pending','accepted','rejected') NOT NULL DEFAULT 'pending',
+  `accepted_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_friends_user_id_friend_id_unique` (`user_id`,`friend_id`),
+  KEY `user_friends_friend_id_foreign` (`friend_id`),
+  CONSTRAINT `user_friends_friend_id_foreign` FOREIGN KEY (`friend_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `user_friends_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== user_medical_conditions ===
+CREATE TABLE `user_medical_conditions` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) unsigned NOT NULL,
+  `medical_condition_id` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `user_medical_conditions_user_id_foreign` (`user_id`),
+  KEY `user_medical_conditions_medical_condition_id_foreign` (`medical_condition_id`),
+  CONSTRAINT `user_medical_conditions_medical_condition_id_foreign` FOREIGN KEY (`medical_condition_id`) REFERENCES `medical_conditions` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `user_medical_conditions_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== users ===
+CREATE TABLE `users` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `username` varchar(255) DEFAULT NULL,
+  `gender` enum('male','female') DEFAULT NULL,
+  `birth_date` date DEFAULT NULL,
+  `weight` double DEFAULT NULL,
+  `height` double DEFAULT NULL,
+  `email` varchar(255) NOT NULL,
+  `email_verified_at` timestamp NULL DEFAULT NULL,
+  `password` varchar(255) DEFAULT NULL,
+  `password_set` varchar(255) NOT NULL DEFAULT '1',
+  `provider_id` varchar(255) DEFAULT NULL,
+  `provider_name` varchar(255) DEFAULT NULL,
+  `role` enum('user','companion','doctor','organization','organization_admin','admin','super_admin') NOT NULL DEFAULT 'user',
+  `phone` varchar(255) DEFAULT NULL,
+  `image` varchar(255) DEFAULT NULL,
+  `remember_token` varchar(100) DEFAULT NULL,
+  `language` varchar(255) NOT NULL DEFAULT 'en',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `otp` varchar(255) DEFAULT NULL,
+  `otp_expires_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `users_email_unique` (`email`),
+  UNIQUE KEY `users_phone_unique` (`phone`),
+  UNIQUE KEY `users_username_unique` (`username`)
+) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== visitors ===
+CREATE TABLE `visitors` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) unsigned NOT NULL,
+  `visitable_type` varchar(255) NOT NULL,
+  `visitable_id` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_visitable_unique` (`user_id`,`visitable_id`,`visitable_type`),
+  KEY `visitors_visitable_type_visitable_id_index` (`visitable_type`,`visitable_id`),
+  CONSTRAINT `visitors_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== wheelchair_events ===
+CREATE TABLE `wheelchair_events` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `e_chair_id` bigint(20) unsigned NOT NULL,
+  `event_type` varchar(255) NOT NULL,
+  `event_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`event_data`)),
+  `severity` varchar(255) NOT NULL DEFAULT 'info',
+  `timestamp_ms` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `wheelchair_events_e_chair_id_foreign` (`e_chair_id`),
+  CONSTRAINT `wheelchair_events_e_chair_id_foreign` FOREIGN KEY (`e_chair_id`) REFERENCES `e_chairs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== wheelchair_movement_states ===
+CREATE TABLE `wheelchair_movement_states` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `wheelchair_id` bigint(20) unsigned NOT NULL,
+  `movement_status` varchar(255) NOT NULL,
+  `speed` double NOT NULL,
+  `position` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`position`)),
+  `theta` double NOT NULL,
+  `mode` varchar(255) NOT NULL,
+  `risk_level` varchar(255) NOT NULL,
+  `obstacle_detected` tinyint(1) NOT NULL,
+  `obstacle_distance` double NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `wheelchair_movement_states_wheelchair_id_foreign` (`wheelchair_id`),
+  CONSTRAINT `wheelchair_movement_states_wheelchair_id_foreign` FOREIGN KEY (`wheelchair_id`) REFERENCES `wheelchairs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== wheelchair_sensors ===
+CREATE TABLE `wheelchair_sensors` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `wheelchair_id` bigint(20) unsigned NOT NULL,
+  `sensor_type` varchar(255) NOT NULL,
+  `sensor_name` varchar(255) NOT NULL,
+  `firmware_version` varchar(255) NOT NULL,
+  `status` enum('active','inactive','error') NOT NULL DEFAULT 'inactive',
+  `last_reading_time` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `wheelchair_sensors_wheelchair_id_foreign` (`wheelchair_id`),
+  CONSTRAINT `wheelchair_sensors_wheelchair_id_foreign` FOREIGN KEY (`wheelchair_id`) REFERENCES `wheelchairs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== wheelchair_telemetry ===
+CREATE TABLE `wheelchair_telemetry` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `e_chair_id` bigint(20) unsigned NOT NULL,
+  `position_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`position_data`)),
+  `speed` double NOT NULL DEFAULT 0,
+  `battery_level` int(11) DEFAULT NULL,
+  `heading` double DEFAULT NULL,
+  `status` varchar(255) DEFAULT NULL,
+  `timestamp_ms` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `wheelchair_telemetry_e_chair_id_foreign` (`e_chair_id`),
+  CONSTRAINT `wheelchair_telemetry_e_chair_id_foreign` FOREIGN KEY (`e_chair_id`) REFERENCES `e_chairs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+=== wheelchairs ===
+CREATE TABLE `wheelchairs` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `serial_number` varchar(255) NOT NULL,
+  `api_key` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `user_id` bigint(20) unsigned DEFAULT NULL,
+  `connection_state` enum('online','offline') NOT NULL DEFAULT 'offline',
+  `x_coordinate` double DEFAULT NULL,
+  `y_coordinate` double DEFAULT NULL,
+  `theta` double DEFAULT NULL,
+  `current_floor_id` bigint(20) unsigned DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `wheelchairs_serial_number_unique` (`serial_number`),
+  UNIQUE KEY `wheelchairs_user_id_unique` (`user_id`),
+  UNIQUE KEY `wheelchairs_api_key_unique` (`api_key`),
+  KEY `wheelchairs_current_floor_id_foreign` (`current_floor_id`),
+  CONSTRAINT `wheelchairs_current_floor_id_foreign` FOREIGN KEY (`current_floor_id`) REFERENCES `floors` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `wheelchairs_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+

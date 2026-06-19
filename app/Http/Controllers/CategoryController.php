@@ -48,7 +48,7 @@ class CategoryController extends ApiController
         $with = $this->relationships($request->query('include', ''), auth('sanctum')->user());
 
         $categories = $this->categoryService->getCategoriesTree(auth('sanctum')->user(), $request->validated(), $with);
-        
+
         return $this->successResponse(
             message: __('messages.actions.retrieved_success', ['resource' => __('messages.resources.category.plural')]),
             status: 200,
@@ -82,7 +82,7 @@ class CategoryController extends ApiController
         }
 
         $category = $this->categoryService->createCategory(auth('sanctum')->user(), $request->validated(), $with, $path ?? null);
-        
+
         $this->logAdminAction('created', $category, $request->validated());
 
         return $this->successResponse(
@@ -106,7 +106,7 @@ class CategoryController extends ApiController
         }
 
         $category = $this->categoryService->updateCategory($category, auth('sanctum')->user(), $request->validated(), $with, $path ?? null);
-        
+
         $this->logAdminAction('updated', $category, $request->validated());
 
         return $this->successResponse(
@@ -123,7 +123,7 @@ class CategoryController extends ApiController
         $this->logAdminAction('deleted', $category);
 
         $this->categoryService->deleteCategory($category);
-        
+
         return $this->successResponse(
             message: __('messages.actions.deleted_success', ['resource' => __('messages.resources.category.singular')]),
             status: 200

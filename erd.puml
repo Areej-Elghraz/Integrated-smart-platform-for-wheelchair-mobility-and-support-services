@@ -1,0 +1,702 @@
+@startuml
+
+hide methods
+hide stereotypes
+skinparam linetype ortho
+
+entity "ai_recommendations" as ai_recommendations {
+    * id : BIGINT(20) <<PK>>
+    wheelchair_id : BIGINT(20)
+    heart_rate : DOUBLE
+    heart_rate_status : ENUM('LOW','MEDIUM','CRITICAL')
+    temperature : DOUBLE
+    temperature_status : ENUM('LOW','MEDIUM','CRITICAL')
+    mpu_angle : DOUBLE
+    fall_status : ENUM('LOW','MEDIUM','CRITICAL')
+    type : VARCHAR(255)
+    risk_level : ENUM('LOW','MEDIUM','CRITICAL')
+    reason : TEXT
+    recommendation : TEXT
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "ai_status_logs" as ai_status_logs {
+    * id : BIGINT(20) <<PK>>
+    e_chair_id : BIGINT(20)
+    event_type : VARCHAR(255)
+    component_name : VARCHAR(255)
+    message : TEXT
+    decision_context : LONGTEXT
+    details : LONGTEXT
+    timestamp_ms : BIGINT(20)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "audit_logs" as audit_logs {
+    * id : BIGINT(20) <<PK>>
+    user_id : BIGINT(20)
+    action : VARCHAR(255)
+    model_type : VARCHAR(255)
+    model_id : BIGINT(20)
+    details : LONGTEXT
+    ip_address : VARCHAR(255)
+    user_agent : VARCHAR(255)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "buildings" as buildings {
+    * id : BIGINT(20) <<PK>>
+    name : VARCHAR(255)
+    description : TEXT
+    organization_id : BIGINT(20)
+    image : VARCHAR(255)
+    latitude : DOUBLE
+    longitude : DOUBLE
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+    owner_id : BIGINT(20)
+}
+
+entity "categories" as categories {
+    * id : BIGINT(20) <<PK>>
+    name : VARCHAR(255)
+    parent_id : BIGINT(20)
+    owner_id : BIGINT(20)
+    image : VARCHAR(255)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "category_organization" as category_organization {
+    * id : BIGINT(20) <<PK>>
+    category_id : BIGINT(20)
+    organization_id : BIGINT(20)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "category_place" as category_place {
+    * id : BIGINT(20) <<PK>>
+    category_id : BIGINT(20)
+    place_id : BIGINT(20)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "chat_messages" as chat_messages {
+    * id : BIGINT(20) <<PK>>
+    chat_session_id : BIGINT(20)
+    sender_type : ENUM('USER','BOT')
+    content : TEXT
+    attachments : LONGTEXT
+    reaction : ENUM('LIKE','DISLIKE')
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "chat_sessions" as chat_sessions {
+    * id : BIGINT(20) <<PK>>
+    user_id : BIGINT(20)
+    title : VARCHAR(255)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "cities" as cities {
+    * id : BIGINT(20) <<PK>>
+    name : VARCHAR(255)
+    country_id : BIGINT(20)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "comments" as comments {
+    * id : BIGINT(20) <<PK>>
+    user_id : BIGINT(20)
+    commentable_type : VARCHAR(255)
+    commentable_id : BIGINT(20)
+    content : TEXT
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+    parent_id : BIGINT(20)
+}
+
+entity "connection_requests" as connection_requests {
+    * id : BIGINT(20) <<PK>>
+    sender_id : BIGINT(20)
+    receiver_id : BIGINT(20)
+    connection_type : ENUM('COMPANION','DOCTOR')
+    status : ENUM('PENDING','ACCEPTED','REJECTED')
+    accepted_at : TIMESTAMP
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "conversations" as conversations {
+    * id : BIGINT(20) <<PK>>
+    user_one_id : BIGINT(20)
+    user_two_id : BIGINT(20)
+    deleted_by_user_one : TINYINT(1)
+    deleted_by_user_two : TINYINT(1)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "countries" as countries {
+    * id : BIGINT(20) <<PK>>
+    name : VARCHAR(255)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "current_safety_states" as current_safety_states {
+    wheelchair_id : BIGINT(20)
+    fall_detected : TINYINT(1)
+    abnormal_posture : TINYINT(1)
+    sudden_motion_detected : TINYINT(1)
+    status : ENUM('NORMAL','WARNING','CRITICAL')
+    updated_at : TIMESTAMP
+}
+
+entity "decision_trace_logs" as decision_trace_logs {
+    * id : BIGINT(20) <<PK>>
+    event_type : VARCHAR(255)
+    event_id : BIGINT(20)
+    decisions : LONGTEXT
+    reasoning : TEXT
+    latency_ms : DOUBLE
+    timestamp_ms : BIGINT(20)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "device_status" as device_status {
+    * id : BIGINT(20) <<PK>>
+    e_chair_id : BIGINT(20)
+    device_name : VARCHAR(255)
+    connection_status : VARCHAR(255)
+    firmware_version : VARCHAR(255)
+    last_heartbeat : TIMESTAMP
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "e_chairs" as e_chairs {
+    * id : BIGINT(20) <<PK>>
+    serial_number : VARCHAR(255)
+    model : VARCHAR(255)
+    status : VARCHAR(255)
+    assigned_to_user_id : BIGINT(20)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "emergency_events" as emergency_events {
+    * id : BIGINT(20) <<PK>>
+    e_chair_id : BIGINT(20)
+    trip_id : BIGINT(20)
+    event_type : VARCHAR(255)
+    source_classification : VARCHAR(255)
+    location : LONGTEXT
+    severity : VARCHAR(255)
+    resolved_at : TIMESTAMP
+    timestamp_ms : BIGINT(20)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "events" as events {
+    * id : BIGINT(20) <<PK>>
+    wheelchair_id : BIGINT(20)
+    trip_id : BIGINT(20)
+    type : ENUM('HEALTH','OBSTACLE','SOS','BATTERY')
+    severity : ENUM('LOW','MEDIUM','CRITICAL')
+    message : TEXT
+    data : LONGTEXT
+    event_source : ENUM('AI','SYSTEM')
+    read_at : TIMESTAMP
+    resolved_at : TIMESTAMP
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "favorites" as favorites {
+    * id : BIGINT(20) <<PK>>
+    user_id : BIGINT(20)
+    favoritable_type : VARCHAR(255)
+    favoritable_id : BIGINT(20)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "floors" as floors {
+    * id : BIGINT(20) <<PK>>
+    name : VARCHAR(255)
+    number : INT(11)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+    building_id : BIGINT(20)
+}
+
+entity "health_alerts" as health_alerts {
+    * id : BIGINT(20) <<PK>>
+    health_prediction_id : BIGINT(20)
+    user_id : BIGINT(20)
+    trip_id : BIGINT(20)
+    status : VARCHAR(255)
+    severity : VARCHAR(255)
+    timestamp_ms : BIGINT(20)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "health_predictions" as health_predictions {
+    * id : BIGINT(20) <<PK>>
+    e_chair_id : BIGINT(20)
+    prediction_type : VARCHAR(255)
+    confidence : DOUBLE
+    is_critical : TINYINT(1)
+    source_model : VARCHAR(255)
+    prediction_window_ms : INT(11)
+    details : LONGTEXT
+    timestamp_ms : BIGINT(20)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "health_sensor_logs" as health_sensor_logs {
+    * id : BIGINT(20) <<PK>>
+    e_chair_id : BIGINT(20)
+    type : VARCHAR(255)
+    value : DOUBLE
+    unit : VARCHAR(255)
+    sensor_status : VARCHAR(255)
+    timestamp_ms : BIGINT(20)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "hidden_posts" as hidden_posts {
+    * id : BIGINT(20) <<PK>>
+    user_id : BIGINT(20)
+    post_id : BIGINT(20)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "incident_reports" as incident_reports {
+    * id : BIGINT(20) <<PK>>
+    event_type : VARCHAR(255)
+    event_id : BIGINT(20)
+    description : TEXT
+    severity : VARCHAR(255)
+    status : VARCHAR(255)
+    metadata : LONGTEXT
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "likes" as likes {
+    * id : BIGINT(20) <<PK>>
+    user_id : BIGINT(20)
+    likeable_type : VARCHAR(255)
+    likeable_id : BIGINT(20)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "maps" as maps {
+    * id : BIGINT(20) <<PK>>
+    floor_id : BIGINT(20)
+    map_file : VARCHAR(255)
+    extension : VARCHAR(255)
+    width : DOUBLE
+    height : DOUBLE
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+    yaml_file : VARCHAR(255)
+    yaml_data : LONGTEXT
+}
+
+entity "medical_conditions" as medical_conditions {
+    * id : BIGINT(20) <<PK>>
+    name : LONGTEXT
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "messages" as messages {
+    * id : BIGINT(20) <<PK>>
+    conversation_id : BIGINT(20)
+    sender_id : BIGINT(20)
+    type : ENUM('TEXT','IMAGE','TEXT_IMAGE','VOICE')
+    content : TEXT
+    attachment : VARCHAR(255)
+    is_read : TINYINT(1)
+    deleted_by_sender : TINYINT(1)
+    deleted_by_receiver : TINYINT(1)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "notifications" as notifications {
+    id : CHAR(36)
+    type : VARCHAR(255)
+    notifiable_type : VARCHAR(255)
+    notifiable_id : BIGINT(20)
+    data : TEXT
+    read_at : TIMESTAMP
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "obstacle_logs" as obstacle_logs {
+    * id : BIGINT(20) <<PK>>
+    e_chair_id : BIGINT(20)
+    location : LONGTEXT
+    obstacle_type : VARCHAR(255)
+    distance_to_obstacle : DOUBLE
+    timestamp_ms : BIGINT(20)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "organizations" as organizations {
+    * id : BIGINT(20) <<PK>>
+    name : VARCHAR(255)
+    description : TEXT
+    owner_id : BIGINT(20)
+    country_id : BIGINT(20)
+    city_id : BIGINT(20)
+    latitude : DECIMAL(10,8)
+    longitude : DECIMAL(11,8)
+    image : VARCHAR(255)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "places" as places {
+    * id : BIGINT(20) <<PK>>
+    name : VARCHAR(255)
+    description : TEXT
+    owner_id : BIGINT(20)
+    parent_place_id : BIGINT(20)
+    floor_id : BIGINT(20)
+    x : DOUBLE
+    y : DOUBLE
+    z : DOUBLE
+    rotation : DOUBLE
+    image : VARCHAR(255)
+    accessibility_data : LONGTEXT
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+    points : LONGTEXT
+}
+
+entity "posts" as posts {
+    * id : BIGINT(20) <<PK>>
+    user_id : BIGINT(20)
+    content : TEXT
+    images : LONGTEXT
+    files : LONGTEXT
+    shared_post_id : BIGINT(20)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "reviews" as reviews {
+    * id : BIGINT(20) <<PK>>
+    user_id : BIGINT(20)
+    reviewable_type : VARCHAR(255)
+    reviewable_id : BIGINT(20)
+    rating : TINYINT(3)
+    comment : TEXT
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "safety_monitoring_logs" as safety_monitoring_logs {
+    * id : BIGINT(20) <<PK>>
+    wheelchair_id : BIGINT(20)
+    user_id : BIGINT(20)
+    head_pitch : DOUBLE
+    head_roll : DOUBLE
+    chair_tilt_angle : DOUBLE
+    acceleration_force : DOUBLE
+    fall_detected : TINYINT(1)
+    abnormal_posture : TINYINT(1)
+    safety_status : ENUM('NORMAL','WARNING','CRITICAL','EMERGENCY')
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "sensor_readings" as sensor_readings {
+    * id : BIGINT(20) <<PK>>
+    wheelchair_id : BIGINT(20)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+    trip_id : BIGINT(20)
+    heart_rate_min : DOUBLE
+    heart_rate_max : DOUBLE
+    heart_rate_avg : DOUBLE
+    temperature_min : DOUBLE
+    temperature_max : DOUBLE
+    temperature_avg : DOUBLE
+    mpu_angle_min : DOUBLE
+    mpu_angle_max : DOUBLE
+    mpu_angle_avg : DOUBLE
+    reading_time : TIMESTAMP
+}
+
+entity "sensor_readings_aggregated" as sensor_readings_aggregated {
+    * id : BIGINT(20) <<PK>>
+    wheelchair_id : BIGINT(20)
+    trip_id : BIGINT(20)
+    heart_rate_min : DOUBLE
+    heart_rate_max : DOUBLE
+    heart_rate_avg : DOUBLE
+    temperature_min : DOUBLE
+    temperature_max : DOUBLE
+    temperature_avg : DOUBLE
+    mpu_angle_min : DOUBLE
+    mpu_angle_max : DOUBLE
+    mpu_angle_avg : DOUBLE
+    window_start : TIMESTAMP
+    window_end : TIMESTAMP
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "support_messages" as support_messages {
+    * id : BIGINT(20) <<PK>>
+    user_id : BIGINT(20)
+    name : VARCHAR(255)
+    email : VARCHAR(255)
+    phone : VARCHAR(255)
+    message : TEXT
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "trip_updates" as trip_updates {
+    * id : BIGINT(20) <<PK>>
+    trip_id : BIGINT(20)
+    update_type : VARCHAR(255)
+    source : VARCHAR(255)
+    update_data : LONGTEXT
+    timestamp_ms : BIGINT(20)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "trips" as trips {
+    * id : BIGINT(20) <<PK>>
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+    wheelchair_id : BIGINT(20)
+    mode : ENUM('AUTONOMOUS','MANUAL')
+    status : ENUM('STARTED','COMPLETED','FAILED')
+    started_at : TIMESTAMP
+    ended_at : TIMESTAMP
+    place_id : BIGINT(20)
+    start_x : DOUBLE
+    start_y : DOUBLE
+    end_x : DOUBLE
+    end_y : DOUBLE
+}
+
+entity "user_friends" as user_friends {
+    * id : BIGINT(20) <<PK>>
+    user_id : BIGINT(20)
+    friend_id : BIGINT(20)
+    status : ENUM('PENDING','ACCEPTED','REJECTED')
+    accepted_at : TIMESTAMP
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "user_medical_conditions" as user_medical_conditions {
+    * id : BIGINT(20) <<PK>>
+    user_id : BIGINT(20)
+    medical_condition_id : BIGINT(20)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "users" as users {
+    * id : BIGINT(20) <<PK>>
+    name : VARCHAR(255)
+    username : VARCHAR(255)
+    gender : ENUM('MALE','FEMALE')
+    birth_date : DATE
+    weight : DOUBLE
+    height : DOUBLE
+    email : VARCHAR(255)
+    email_verified_at : TIMESTAMP
+    password : VARCHAR(255)
+    password_set : VARCHAR(255)
+    provider_id : VARCHAR(255)
+    provider_name : VARCHAR(255)
+    role : ENUM('USER','COMPANION','DOCTOR','ORGANIZATION','ORGANIZATION_ADMIN','ADMIN','SUPER_ADMIN')
+    phone : VARCHAR(255)
+    image : VARCHAR(255)
+    remember_token : VARCHAR(100)
+    language : VARCHAR(255)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+    otp : VARCHAR(255)
+    otp_expires_at : TIMESTAMP
+}
+
+entity "visitors" as visitors {
+    * id : BIGINT(20) <<PK>>
+    user_id : BIGINT(20)
+    visitable_type : VARCHAR(255)
+    visitable_id : BIGINT(20)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "wheelchair_events" as wheelchair_events {
+    * id : BIGINT(20) <<PK>>
+    e_chair_id : BIGINT(20)
+    event_type : VARCHAR(255)
+    event_data : LONGTEXT
+    severity : VARCHAR(255)
+    timestamp_ms : BIGINT(20)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "wheelchair_movement_states" as wheelchair_movement_states {
+    * id : BIGINT(20) <<PK>>
+    wheelchair_id : BIGINT(20)
+    movement_status : VARCHAR(255)
+    speed : DOUBLE
+    position : LONGTEXT
+    theta : DOUBLE
+    mode : VARCHAR(255)
+    risk_level : VARCHAR(255)
+    obstacle_detected : TINYINT(1)
+    obstacle_distance : DOUBLE
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "wheelchair_sensors" as wheelchair_sensors {
+    * id : BIGINT(20) <<PK>>
+    wheelchair_id : BIGINT(20)
+    sensor_type : VARCHAR(255)
+    sensor_name : VARCHAR(255)
+    firmware_version : VARCHAR(255)
+    status : ENUM('ACTIVE','INACTIVE','ERROR')
+    last_reading_time : TIMESTAMP
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "wheelchair_telemetry" as wheelchair_telemetry {
+    * id : BIGINT(20) <<PK>>
+    e_chair_id : BIGINT(20)
+    position_data : LONGTEXT
+    speed : DOUBLE
+    battery_level : INT(11)
+    heading : DOUBLE
+    status : VARCHAR(255)
+    timestamp_ms : BIGINT(20)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+}
+
+entity "wheelchairs" as wheelchairs {
+    * id : BIGINT(20) <<PK>>
+    serial_number : VARCHAR(255)
+    api_key : VARCHAR(255)
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+    user_id : BIGINT(20)
+    connection_state : ENUM('ONLINE','OFFLINE')
+    x_coordinate : DOUBLE
+    y_coordinate : DOUBLE
+    theta : DOUBLE
+    current_floor_id : BIGINT(20)
+}
+
+
+' Relationships
+ai_recommendations }o--|| wheelchairs : "wheelchair_id"
+ai_status_logs }o--|| e_chairs : "e_chair_id"
+audit_logs }o--|| users : "user_id"
+buildings }o--|| organizations : "organization_id"
+buildings }o--|| users : "owner_id"
+categories }o--|| users : "owner_id"
+categories }o--|| categories : "parent_id"
+category_organization }o--|| categories : "category_id"
+category_organization }o--|| organizations : "organization_id"
+category_place }o--|| categories : "category_id"
+category_place }o--|| places : "place_id"
+chat_messages }o--|| chat_sessions : "chat_session_id"
+chat_sessions }o--|| users : "user_id"
+cities }o--|| countries : "country_id"
+comments }o--|| comments : "parent_id"
+comments }o--|| users : "user_id"
+connection_requests }o--|| users : "receiver_id"
+connection_requests }o--|| users : "sender_id"
+conversations }o--|| users : "user_one_id"
+conversations }o--|| users : "user_two_id"
+current_safety_states }o--|| wheelchairs : "wheelchair_id"
+device_status }o--|| e_chairs : "e_chair_id"
+e_chairs }o--|| users : "assigned_to_user_id"
+emergency_events }o--|| e_chairs : "e_chair_id"
+emergency_events }o--|| trips : "trip_id"
+events }o--|| trips : "trip_id"
+events }o--|| wheelchairs : "wheelchair_id"
+favorites }o--|| users : "user_id"
+floors }o--|| buildings : "building_id"
+health_alerts }o--|| health_predictions : "health_prediction_id"
+health_alerts }o--|| trips : "trip_id"
+health_alerts }o--|| users : "user_id"
+health_predictions }o--|| e_chairs : "e_chair_id"
+health_sensor_logs }o--|| e_chairs : "e_chair_id"
+hidden_posts }o--|| posts : "post_id"
+hidden_posts }o--|| users : "user_id"
+likes }o--|| users : "user_id"
+maps }o--|| floors : "floor_id"
+messages }o--|| conversations : "conversation_id"
+messages }o--|| users : "sender_id"
+obstacle_logs }o--|| e_chairs : "e_chair_id"
+organizations }o--|| cities : "city_id"
+organizations }o--|| countries : "country_id"
+organizations }o--|| users : "owner_id"
+places }o--|| floors : "floor_id"
+places }o--|| users : "owner_id"
+places }o--|| places : "parent_place_id"
+posts }o--|| posts : "shared_post_id"
+posts }o--|| users : "user_id"
+reviews }o--|| users : "user_id"
+safety_monitoring_logs }o--|| users : "user_id"
+safety_monitoring_logs }o--|| wheelchairs : "wheelchair_id"
+sensor_readings }o--|| trips : "trip_id"
+sensor_readings }o--|| wheelchairs : "wheelchair_id"
+sensor_readings_aggregated }o--|| trips : "trip_id"
+sensor_readings_aggregated }o--|| wheelchairs : "wheelchair_id"
+support_messages }o--|| users : "user_id"
+trip_updates }o--|| trips : "trip_id"
+trips }o--|| places : "place_id"
+trips }o--|| wheelchairs : "wheelchair_id"
+user_friends }o--|| users : "friend_id"
+user_friends }o--|| users : "user_id"
+user_medical_conditions }o--|| medical_conditions : "medical_condition_id"
+user_medical_conditions }o--|| users : "user_id"
+visitors }o--|| users : "user_id"
+wheelchair_events }o--|| e_chairs : "e_chair_id"
+wheelchair_movement_states }o--|| wheelchairs : "wheelchair_id"
+wheelchair_sensors }o--|| wheelchairs : "wheelchair_id"
+wheelchair_telemetry }o--|| e_chairs : "e_chair_id"
+wheelchairs }o--|| floors : "current_floor_id"
+wheelchairs }o--|| users : "user_id"
+
+@enduml

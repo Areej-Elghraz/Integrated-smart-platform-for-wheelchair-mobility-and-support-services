@@ -491,7 +491,7 @@ class WheelchairController extends ApiController
             // Save latest state to Redis key for immediate retrieval via getMovementStatus API
             \Illuminate\Support\Facades\Redis::setex("latest_movement_state_{$wheelchair->id}", 600, json_encode($movementData));
             
-            $movementState = (object) $movementData;
+            $movementState = new \App\Models\WheelchairMovementState($movementData);
             $movementState->wheelchair = $wheelchair;
         } catch (\Exception $e) {
             $warning .= 'Redis connection failed. Falling back to MySQL. ';

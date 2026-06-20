@@ -44,6 +44,7 @@ class SosAlertNotification extends Notification
             'message' => "{$this->sender->name} is in an emergency and needs help!",
             'sender_id' => $this->sender->id,
             'sender_name' => $this->sender->name,
+            'sender_image' => $this->sender->image,
             'latitude' => $this->payload['latitude'] ?? null,
             'longitude' => $this->payload['longitude'] ?? null,
             'location_link' => $this->payload['location_link'] ?? null,

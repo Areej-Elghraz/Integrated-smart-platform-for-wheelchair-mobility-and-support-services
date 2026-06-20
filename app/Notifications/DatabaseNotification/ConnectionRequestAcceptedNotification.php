@@ -42,10 +42,14 @@ class ConnectionRequestAcceptedNotification extends Notification
         return [
             'type' => 'connection_request_accepted',
             'connection_type' => $this->type,
+            'sender_id' => $this->accepter->id,
+            'sender_name' => $this->accepter->name,
+            'sender_image' => $this->accepter->image,
             'user' => [
                 'id' => $this->accepter->id,
                 'name' => $this->accepter->name,
                 'username' => $this->accepter->username,
+                'image' => $this->accepter->image,
             ],
             'message' => "Your {$this->type} connection request was accepted by {$this->accepter->name}.",
         ];

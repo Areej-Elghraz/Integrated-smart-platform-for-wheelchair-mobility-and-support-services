@@ -29,6 +29,7 @@ class MessageSentDbNotification extends Notification
             'message_id' => $this->message->id,
             'sender_id' => $this->message->sender_id,
             'sender_name' => $this->message->sender->name,
+            'sender_image' => $this->message->sender->image,
             'message' => "{$this->message->sender->name} sent you a message.",
         ];
     }

@@ -79,7 +79,7 @@ class SyncRedisToMysql extends Command
                 if (isset($parsed['position']) && is_array($parsed['position'])) {
                     $parsed['position'] = json_encode($parsed['position']);
                 }
-                
+
                 $parsed['created_at'] = now();
                 $parsed['updated_at'] = now();
                 $records[] = $parsed;
@@ -88,9 +88,17 @@ class SyncRedisToMysql extends Command
 
         if (!empty($records)) {
             // Upsert records based on wheelchair_id
-            DB::table('trip_movement_states')->upsert($records, ['wheelchair_id'], [
-                'trip_id', 'movement_status', 'speed', 'position', 'theta', 'mode', 
-                'risk_level', 'obstacle_detected', 'obstacle_distance', 'updated_at'
+            DB::table('wheelchair_movement_states')->upsert($records, ['wheelchair_id'], [
+                'trip_id',
+                'movement_status',
+                'speed',
+                'position',
+                'theta',
+                'mode',
+                'risk_level',
+                'obstacle_detected',
+                'obstacle_distance',
+                'updated_at'
             ]);
             $this->info(count($records) . ' movement states upserted.');
         }
@@ -114,9 +122,17 @@ class SyncRedisToMysql extends Command
         if (!empty($records)) {
             // Upsert records based on wheelchair_id
             DB::table('current_vital_states')->upsert($records, ['wheelchair_id'], [
-                'heart_rate', 'heart_rate_status', 'temperature', 'temperature_status',
-                'mpu_angle', 'fall_status', 'type', 'risk_level', 'reason', 
-                'recommendation', 'updated_at'
+                'heart_rate',
+                'heart_rate_status',
+                'temperature',
+                'temperature_status',
+                'mpu_angle',
+                'fall_status',
+                'type',
+                'risk_level',
+                'reason',
+                'recommendation',
+                'updated_at'
             ]);
             $this->info(count($records) . ' vital states upserted.');
         }

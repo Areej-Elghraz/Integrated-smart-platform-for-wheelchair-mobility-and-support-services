@@ -14,8 +14,25 @@ class NotificationController extends ApiController
     public function index(Request $request): JsonResponse
     {
         $perPage = $request->input('per_page', 50);
-        
+
         $notifications = Auth::user()->notifications()->paginate($perPage);
+        
+        $notifications->getCollection()->transform(function ($notification) {
+            $data = $notification->data;
+            // Map common keys to extract user ID
+            $userId = $data['sender_id'] ?? $data['actor_id'] ?? $data['acceptor_id'] ?? ($data['user']['id'] ?? null);
+            
+            if ($userId) {
+                $user = \App\Models\User::find($userId);
+                if ($user) {
+                    $data['sender_id'] = $user->id;
+                    $data['sender_name'] = $user->name;
+                    $data['sender_image'] = $user->image;
+                    $notification->data = $data;
+                }
+            }
+            return $notification;
+        });
 
         return $this->successResponse('Notifications retrieved successfully.', parameters: ['data' => $notifications]);
     }

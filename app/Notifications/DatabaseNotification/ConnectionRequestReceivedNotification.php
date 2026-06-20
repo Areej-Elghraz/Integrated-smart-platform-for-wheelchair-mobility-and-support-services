@@ -45,10 +45,14 @@ class ConnectionRequestReceivedNotification extends Notification
             'type' => 'connection_request_received',
             'connection_type' => $this->type,
             'connection_id' => $this->connectionRequestId,
+            'sender_id' => $this->sender->id,
+            'sender_name' => $this->sender->name,
+            'sender_image' => $this->sender->image,
             'user' => [
                 'id' => $this->sender->id,
                 'name' => $this->sender->name,
                 'username' => $this->sender->username,
+                'image' => $this->sender->image,
             ],
             'message' => "You have received a new {$this->type} connection request from {$this->sender->name}.",
         ];

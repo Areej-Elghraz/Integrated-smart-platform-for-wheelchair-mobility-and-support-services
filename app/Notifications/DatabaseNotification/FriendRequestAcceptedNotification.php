@@ -26,6 +26,9 @@ class FriendRequestAcceptedNotification extends Notification
     {
         return [
             'type' => 'friend_request_accepted',
+            'sender_id' => $this->acceptor->id,
+            'sender_name' => $this->acceptor->name,
+            'sender_image' => $this->acceptor->image,
             'acceptor_id' => $this->acceptor->id,
             'acceptor_name' => $this->acceptor->name,
             'message' => "{$this->acceptor->name} accepted your friend request.",

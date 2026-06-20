@@ -30,6 +30,7 @@ class FriendRequestReceivedNotification extends Notification
             'type' => 'friend_request_received',
             'sender_id' => $this->sender->id,
             'sender_name' => $this->sender->name,
+            'sender_image' => $this->sender->image,
             'friendship_id' => $this->friendship_id,
             'message' => "{$this->sender->name} sent you a connection request.",
         ];

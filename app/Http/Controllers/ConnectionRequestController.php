@@ -86,7 +86,6 @@ class ConnectionRequestController extends ApiController
 
     public function handleRequest(Request $request, ConnectionRequest $connectionRequest)
     {
-        $request->validate(['action' => 'required|in:accept,reject']);
         $user = $request->user();
 
         if ($connectionRequest->receiver_id !== $user->id) {
@@ -97,55 +96,50 @@ class ConnectionRequestController extends ApiController
             return $this->errorResponse('Request is already processed.', 400);
         }
 
-        if ($request->action === 'accept') {
-            DB::beginTransaction();
-            try {
-                $connectionRequest->update([
+        DB::beginTransaction();
+        try {
+            $connectionRequest->update([
+                'status' => 'accepted',
+                'accepted_at' => now()
+            ]);
+
+            // Create a Friendship so they can chat in the community
+            $existingFriendship = Friendship::where(function ($q) use ($connectionRequest) {
+                $q->where('user_id', $connectionRequest->sender_id)->where('friend_id', $connectionRequest->receiver_id);
+            })->orWhere(function ($q) use ($connectionRequest) {
+                $q->where('user_id', $connectionRequest->receiver_id)->where('friend_id', $connectionRequest->sender_id);
+            })->first();
+
+            if (!$existingFriendship) {
+                Friendship::create([
+                    'user_id' => $connectionRequest->sender_id,
+                    'friend_id' => $connectionRequest->receiver_id,
                     'status' => 'accepted',
-                    'accepted_at' => now()
+                    'accepted_at' => now(),
                 ]);
 
-                // Create a Friendship so they can chat in the community
-                $existingFriendship = Friendship::where(function ($q) use ($connectionRequest) {
-                    $q->where('user_id', $connectionRequest->sender_id)->where('friend_id', $connectionRequest->receiver_id);
-                })->orWhere(function ($q) use ($connectionRequest) {
-                    $q->where('user_id', $connectionRequest->receiver_id)->where('friend_id', $connectionRequest->sender_id);
-                })->first();
-
-                if (!$existingFriendship) {
-                    Friendship::create([
-                        'user_id' => $connectionRequest->sender_id,
-                        'friend_id' => $connectionRequest->receiver_id,
-                        'status' => 'accepted',
-                        'accepted_at' => now(),
-                    ]);
-
-                    Conversation::firstOrCreate([
-                        'user_one_id' => min($connectionRequest->sender_id, $connectionRequest->receiver_id),
-                        'user_two_id' => max($connectionRequest->sender_id, $connectionRequest->receiver_id),
-                    ]);
-                } else if ($existingFriendship->status !== 'accepted') {
-                    $existingFriendship->update(['status' => 'accepted', 'accepted_at' => now()]);
-                }
-
-                DB::commit();
-
-                // notification and email
-                $sender = User::find($connectionRequest->sender_id);
-                $sender->notify(new \App\Notifications\DatabaseNotification\ConnectionRequestAcceptedNotification($user, $connectionRequest->connection_type));
-                try {
-                    \Illuminate\Support\Facades\Mail::to($sender->email)->send(new \App\Mail\RequestAcceptedMail($sender, $user));
-                } catch (\Exception $e) {
-                }
-
-                return $this->successResponse('Connection request accepted.', parameters: ['data' => $connectionRequest]);
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return $this->errorResponse('Error accepting request: ' . $e->getMessage(), 500);
+                Conversation::firstOrCreate([
+                    'user_one_id' => min($connectionRequest->sender_id, $connectionRequest->receiver_id),
+                    'user_two_id' => max($connectionRequest->sender_id, $connectionRequest->receiver_id),
+                ]);
+            } else if ($existingFriendship->status !== 'accepted') {
+                $existingFriendship->update(['status' => 'accepted', 'accepted_at' => now()]);
             }
-        } else {
-            $connectionRequest->update(['status' => 'rejected']);
-            return $this->successResponse('Connection request rejected.', parameters: ['data' => $connectionRequest]);
+
+            DB::commit();
+
+            // notification and email
+            $sender = User::find($connectionRequest->sender_id);
+            $sender->notify(new \App\Notifications\DatabaseNotification\ConnectionRequestAcceptedNotification($user, $connectionRequest->connection_type));
+            try {
+                \Illuminate\Support\Facades\Mail::to($sender->email)->send(new \App\Mail\RequestAcceptedMail($sender, $user));
+            } catch (\Exception $e) {
+            }
+
+            return $this->successResponse('Connection request accepted.', parameters: ['data' => $connectionRequest]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->errorResponse('Error accepting request: ' . $e->getMessage(), 500);
         }
     }
 

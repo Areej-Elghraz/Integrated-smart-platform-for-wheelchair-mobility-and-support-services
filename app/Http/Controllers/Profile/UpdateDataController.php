@@ -21,7 +21,7 @@ class UpdateDataController extends ApiController
             $path = $request->file('image')->store('avatars', 'public');
         }
 
-        $user->update([
+        $data = [
             'name'                 => $request->name ?? $user->name,
             'username'             => $request->username ?? $user->username,
             'phone'                => $request->phone ?? $user->phone,
@@ -29,15 +29,21 @@ class UpdateDataController extends ApiController
             'birth_date'           => $request->birth_date ?? $user->birth_date,
             'weight'               => $request->weight ?? $user->weight,
             'height'               => $request->height ?? $user->height,
-            'image'                => $path ?? $user->getRawOriginal('image'),
             'logout_other_devices' => $request->logout_other_devices ?? false,
-        ]);
+        ];
+        if (isset($path)) {
+            $data['image'] = $path;
+        }
+
+        $user->update($data);
+
+        $user->save();
 
         if ($request->has('medical_condition_ids')) {
             $user->medicalConditions()->sync($request->medical_condition_ids);
         }
 
-        $user = Auth::user()->load([
+        $user->refresh()->load([
             'medicalConditions',
             'friends',
             'organizations',

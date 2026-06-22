@@ -234,7 +234,7 @@ class PlaceService
     /**
      * Get a single place.
      */
-    public function getPlace($id, array $with = []): Place
+    public function getPlace($id, array $with = []): ?Place
     {
         return Place::with($with ?: [])->find($id);
     }

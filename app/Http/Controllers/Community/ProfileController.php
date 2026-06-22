@@ -10,6 +10,27 @@ use Illuminate\Http\Request;
 
 class ProfileController extends ApiController
 {
+    public function index(Request $request)
+    {
+        $query = User::query();
+        
+        if ($search = $request->get('search')) {
+            $query->where('name', 'like', "%{$search}%");
+        }
+        
+        $paginator = $query->cursorPaginate($request->get('pagination', 15));
+        
+        return $this->successResponse(
+            message: __('messages.actions.retrieved_success', ['resource' => 'Community Users']),
+            status: 200,
+            parameters: [
+                'users' => $paginator->getCollection()->map->only(['id', 'name', 'image'])->toArray(),
+                'next_cursor' => $paginator->nextCursor()?->encode(),
+                'prev_cursor' => $paginator->previousCursor()?->encode(),
+            ]
+        );
+    }
+
     public function show(User $user, Request $request)
     {
         $paginator = $user->posts()

@@ -115,6 +115,7 @@ Route::middleware(['auth:sanctum', 'ability:' . TokenAbilityEnum::ACCESS_TOKEN->
   Route::get('/posts/{post}/shares', [\App\Http\Controllers\Community\PostController::class, 'shares'])->name('posts.shares');
   Route::post('/posts/{post}/like', [\App\Http\Controllers\Community\LikeController::class, 'toggleLike'])->name('posts.like');
   Route::post('/posts/{post}/hide', [\App\Http\Controllers\Community\PostController::class, 'hide'])->name('posts.hide');
+  Route::get('/community/users', [\App\Http\Controllers\Community\ProfileController::class, 'index'])->name('community.users.index');
   Route::get('/community/users/{user}', [\App\Http\Controllers\Community\ProfileController::class, 'show'])->name('community.profile');
 
   // Community - Friends

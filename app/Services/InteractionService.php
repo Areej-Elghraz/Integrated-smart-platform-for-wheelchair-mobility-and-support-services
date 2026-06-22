@@ -77,40 +77,35 @@ class InteractionService
      */
     public function getComments(Model $model, array $filters = []): array
     {
-        $entityType = strtolower(class_basename($model));
-        $cacheKey = "{$entityType}_{$model->id}_comments_" . md5(json_encode($filters));
+        $query = \App\Models\Comment::query()
+            ->where('commentable_id', $model->id)
+            ->where('commentable_type', get_class($model))
+            ->with(['user:id,name,image'])
+            ->withCount(['likes', 'replies'])
+            ->when(array_key_exists('parent_id', $filters), function ($q) use ($filters) {
+                $q->where('parent_id', $filters['parent_id']);
+            }, function ($q) {
+                $q->whereNull('parent_id');
+            })
+            ->when(!empty($filters['search']), function ($q) use ($filters) {
+                $q->where('content', 'like', "%{$filters['search']}%");
+            })
+            ->when($filters['sort_by'] ?? null, function ($q, $sort) use ($filters) {
+                $dir = $filters['sort_direction'] ?? 'asc';
+                if (in_array($sort, ['created_at', 'likes_count', 'replies_count'])) {
+                    $q->orderBy($sort, $dir);
+                }
+            }, function ($q) {
+                $q->latest();
+            });
 
-        return Cache::remember($cacheKey, 3600, function () use ($model, $filters) {
-            $query = \App\Models\Comment::query()
-                ->where('commentable_id', $model->id)
-                ->where('commentable_type', get_class($model))
-                ->with(['user:id,name,image'])
-                ->withCount(['likes', 'replies'])
-                ->when(array_key_exists('parent_id', $filters), function ($q) use ($filters) {
-                    $q->where('parent_id', $filters['parent_id']);
-                }, function ($q) {
-                    $q->whereNull('parent_id');
-                })
-                ->when(!empty($filters['search']), function ($q) use ($filters) {
-                    $q->where('content', 'like', "%{$filters['search']}%");
-                })
-                ->when($filters['sort_by'] ?? null, function ($q, $sort) use ($filters) {
-                    $dir = $filters['sort_direction'] ?? 'asc';
-                    if (in_array($sort, ['created_at', 'likes_count', 'replies_count'])) {
-                        $q->orderBy($sort, $dir);
-                    }
-                }, function ($q) {
-                    $q->latest();
-                });
+        $paginator = $query->cursorPaginate($filters['pagination'] ?? 15);
 
-            $paginator = $query->cursorPaginate($filters['pagination'] ?? 15);
-
-            return [
-                'comments'    => \App\Http\Resources\CommentResource::collection($paginator->getCollection())->resolve(),
-                'next_cursor' => $paginator->nextCursor()?->encode(),
-                'prev_cursor' => $paginator->previousCursor()?->encode(),
-            ];
-        });
+        return [
+            'comments'    => \App\Http\Resources\CommentResource::collection($paginator->getCollection())->resolve(),
+            'next_cursor' => $paginator->nextCursor()?->encode(),
+            'prev_cursor' => $paginator->previousCursor()?->encode(),
+        ];
     }
 
     /**

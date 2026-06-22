@@ -25,62 +25,58 @@ class ChatService
         $search = $filters['search'] ?? null;
         $filter = $filters['filter'] ?? 'all';
 
-        $cacheKey = 'conversations_' . md5(json_encode($filters));
-
-        return Cache::remember($cacheKey, 3600, function () use ($userId, $search, $filter, $filters) {
-            $query = Conversation::where(function ($q) use ($userId) {
-                $q->where(function ($sub) use ($userId) {
-                    $sub->where('user_one_id', $userId)->where('deleted_by_user_one', false);
-                })->orWhere(function ($sub) use ($userId) {
-                    $sub->where('user_two_id', $userId)->where('deleted_by_user_two', false);
+        $query = Conversation::where(function ($q) use ($userId) {
+            $q->where(function ($sub) use ($userId) {
+                $sub->where('user_one_id', $userId)->where('deleted_by_user_one', false);
+            })->orWhere(function ($sub) use ($userId) {
+                $sub->where('user_two_id', $userId)->where('deleted_by_user_two', false);
+            });
+        })
+            ->when($search, function ($q, $search) use ($userId) {
+                $q->where(function ($q) use ($search, $userId) {
+                    $q->whereHas('userOne', function ($sub) use ($search, $userId) {
+                        $sub->where('name', 'like', "%{$search}%")->where('id', '!=', $userId);
+                    })->orWhereHas('userTwo', function ($sub) use ($search, $userId) {
+                        $sub->where('name', 'like', "%{$search}%")->where('id', '!=', $userId);
+                    })->orWhereHas('messages', function ($sub) use ($search) {
+                        $sub->where('content', 'like', "%{$search}%");
+                    });
                 });
             })
-                ->when($search, function ($q, $search) use ($userId) {
-                    $q->where(function ($q) use ($search, $userId) {
-                        $q->whereHas('userOne', function ($sub) use ($search, $userId) {
-                            $sub->where('name', 'like', "%{$search}%")->where('id', '!=', $userId);
-                        })->orWhereHas('userTwo', function ($sub) use ($search, $userId) {
-                            $sub->where('name', 'like', "%{$search}%")->where('id', '!=', $userId);
-                        })->orWhereHas('messages', function ($sub) use ($search) {
-                            $sub->where('content', 'like', "%{$search}%");
-                        });
+            ->with(['messages' => function ($q) use ($userId) {
+                $q->where(function ($sub) use ($userId) {
+                    $sub->where(function ($inner) use ($userId) {
+                        $inner->where('sender_id', $userId)->where('deleted_by_sender', false);
+                    })->orWhere(function ($inner) use ($userId) {
+                        $inner->where('sender_id', '!=', $userId)->where('deleted_by_receiver', false);
                     });
-                })
-                ->with(['messages' => function ($q) use ($userId) {
-                    $q->where(function ($sub) use ($userId) {
-                        $sub->where(function ($inner) use ($userId) {
-                            $inner->where('sender_id', $userId)->where('deleted_by_sender', false);
-                        })->orWhere(function ($inner) use ($userId) {
-                            $inner->where('sender_id', '!=', $userId)->where('deleted_by_receiver', false);
-                        });
-                    })->latest()->limit(1);
-                }])
-                ->with(['userOne:id,name,image', 'userTwo:id,name,image']);
+                })->latest()->limit(1);
+            }])
+            ->with(['userOne:id,name,image', 'userTwo:id,name,image']);
 
-            $conversations = $query->latest('updated_at')->cursorPaginate($filters['pagination'] ?? 20);
+        $conversations = $query->latest('updated_at')->cursorPaginate($filters['pagination'] ?? 20);
 
-            $formattedCollection = $conversations->getCollection()->map(function ($conversation) use ($userId) {
-                $conversation->unread_count = $conversation->messages()
-                    ->where('sender_id', '!=', $userId)
-                    ->where('is_read', false)
-                    ->count();
-                $conversation->partner = $conversation->user_one_id === $userId ? $conversation->userTwo : $conversation->userOne;
-                unset($conversation->userOne, $conversation->userTwo);
-                return $conversation;
-            });
-
-            if ($filter === 'unread') {
-                $formattedCollection = $formattedCollection->filter(fn($c) => $c->unread_count > 0)->values();
-            }
-
-            $conversations->setCollection($formattedCollection);
-
-            return [
-                'chats'       => \App\Http\Resources\ConversationResource::collection($conversations->getCollection())->resolve(),
-                'next_cursor' => $conversations->nextCursor()?->encode(),
-                'prev_cursor' => $conversations->previousCursor()?->encode(),
-            ];
+        $formattedCollection = $conversations->getCollection()->map(function ($conversation) use ($userId) {
+            $conversation->unread_count = $conversation->messages()
+                ->where('sender_id', '!=', $userId)
+                ->where('is_read', false)
+                ->count();
+            $conversation->partner = $conversation->user_one_id === $userId ? $conversation->userTwo : $conversation->userOne;
+            unset($conversation->userOne, $conversation->userTwo);
+            return $conversation;
         });
+
+        if ($filter === 'unread') {
+            $formattedCollection = $formattedCollection->filter(fn($c) => $c->unread_count > 0)->values();
+        }
+
+        $conversations->setCollection($formattedCollection);
+
+        return [
+            'chats'       => \App\Http\Resources\ConversationResource::collection($conversations->getCollection())->resolve(),
+            'next_cursor' => $conversations->nextCursor()?->encode(),
+            'prev_cursor' => $conversations->previousCursor()?->encode(),
+        ];
     }
 
     public function getMessages(User $user, int $partnerId, array $filters = []): array
@@ -105,29 +101,25 @@ class ChatService
             $this->clearCache($userId, $partnerId);
         }
 
-        $cacheKey = 'messages_' . $conversation->id . '_' . md5(json_encode($filters));
+        $paginator = $conversation->messages()
+            ->where(function ($q) use ($userId) {
+                $q
+                    ->where(function ($inner) use ($userId) {
+                        $inner->where('sender_id', $userId)->where('deleted_by_sender', false);
+                    })
+                    ->orWhere(function ($inner) use ($userId) {
+                        $inner->where('sender_id', '!=', $userId)->where('deleted_by_receiver', false);
+                    });
+            })
+            ->when($filters['search'] ?? null, fn($q, $search) => $q->where('content', 'like', "%{$search}%"))
+            ->latest()
+            ->cursorPaginate($filters['pagination'] ?? 20);
 
-        return Cache::remember($cacheKey, 3600, function () use ($conversation, $filters, $userId) {
-            $paginator = $conversation->messages()
-                ->where(function ($q) use ($userId) {
-                    $q
-                        ->where(function ($inner) use ($userId) {
-                            $inner->where('sender_id', $userId)->where('deleted_by_sender', false);
-                        })
-                        ->orWhere(function ($inner) use ($userId) {
-                            $inner->where('sender_id', '!=', $userId)->where('deleted_by_receiver', false);
-                        });
-                })
-                ->when($filters['search'] ?? null, fn($q, $search) => $q->where('content', 'like', "%{$search}%"))
-                ->latest()
-                ->cursorPaginate($filters['pagination'] ?? 20);
-
-            return [
-                'messages'    => \App\Http\Resources\MessageResource::collection($paginator->getCollection())->resolve(),
-                'next_cursor' => $paginator->nextCursor()?->encode(),
-                'prev_cursor' => $paginator->previousCursor()?->encode(),
-            ];
-        });
+        return [
+            'messages'    => \App\Http\Resources\MessageResource::collection($paginator->getCollection())->resolve(),
+            'next_cursor' => $paginator->nextCursor()?->encode(),
+            'prev_cursor' => $paginator->previousCursor()?->encode(),
+        ];
     }
 
     public function sendMessage(User $user, int $partnerId, array $data, ?object $file = null): Message

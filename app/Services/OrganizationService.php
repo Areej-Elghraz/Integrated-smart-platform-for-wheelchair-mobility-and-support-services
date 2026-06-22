@@ -190,110 +190,85 @@ class OrganizationService
         //     // return $query->with($with)->get();
         // });
 
-        return Cache::remember($cacheKey, 3600, function () use ($user, $filters, $with) {
-            $query = Organization::accessibleBy($user)->with($with ?: []);
+    public function getVisibleOrganizations(?User $user, array $filters = [], array $with = [])
+    {
+        $query = Organization::accessibleBy($user)->with($with ?: []);
 
-            // if (in_array('categories', $with)) {
-            //     $query->throughCategoriesAccessible($user);
-            // }
-
-            // if ($user->isOrganization()) {
-            //     $org = $user->organizationRoleOrganization();
-            //     if (!$org) { /// 
-            //         return collect();
-            //     }
-            //     $query
-            //         // ->where('owner_id', $user->id)
-            //         ->where('id', $org->id);
-            // } else {
-            //     $query->where(function ($q) use ($user) {
-
-            //         $q->whereNull('owner_id') // main places
-
-            //             ->orWhere('owner_id', $user->id) // created by the current user
-
-            //             ->orWhereHas('owner', function ($q) {
-            //                 $q->where('role', UserRoleEnum::ORGANIZATION->value); // created by any organization
-            //             });
-            //     });
-            // }
-
-            $query
-                ->when(
-                    $filters['category_id'] ?? null,
-                    fn($q, $catId) =>
-                    $q->whereHas(
-                        'categories',
-                        fn($q) =>
-                        $q->where('categories.id', $catId)
-                    )
-                )
-                ->when(
-                    !empty($filters['has_categories']),
+        $query
+            ->when(
+                $filters['category_id'] ?? null,
+                fn($q, $catId) =>
+                $q->whereHas(
+                    'categories',
                     fn($q) =>
-                    $q->has('categories', '>', 1)
+                    $q->where('categories.id', $catId)
                 )
-                ->when(
-                    !empty($filters['has_places']),
-                    fn($q) =>
-                    $q->has('places')
-                )
-                // ->when(
-                //     $filters['owner_id'] ?? null,
-                //     fn($q, $ownerId) =>
-                //     $q->where('owner_id', $ownerId)
-                // )
-                ->when(
-                    $filters['country_id'] ?? null,
-                    fn($q, $countryId) =>
-                    $q->where('country_id', $countryId)
-                )
-                ->when(
-                    $filters['city_id'] ?? null,
-                    fn($q, $cityId) =>
-                    $q->where('city_id', $cityId)
-                )
-                ->when(
-                    $filters['created_from'] ?? null,
-                    fn($q, $date) =>
-                    $q->whereDate('created_at', '>=', $date)
-                )
-                ->when(
-                    $filters['created_to'] ?? null,
-                    fn($q, $date) =>
-                    $q->whereDate('created_at', '<=', $date)
-                )
-                ->when(
-                    $filters['min_places'] ?? null,
-                    fn($q, $count) =>
-                    $q->has('places', '>=', $count)
-                )
-                ->when(
-                    $filters['min_categories'] ?? null,
-                    fn($q, $count) =>
-                    $q->has('categories', '>=', $count)
-                )
-                ->when(
-                    $filters['sort_by'] ?? null,
-                    function ($q, $sortBy) use ($filters) {
+            )
+            ->when(
+                !empty($filters['has_categories']),
+                fn($q) =>
+                $q->has('categories', '>', 1)
+            )
+            ->when(
+                !empty($filters['has_places']),
+                fn($q) =>
+                $q->has('places')
+            )
+            // ->when(
+            //     $filters['owner_id'] ?? null,
+            //     fn($q, $ownerId) =>
+            //     $q->where('owner_id', $ownerId)
+            // )
+            ->when(
+                $filters['country_id'] ?? null,
+                fn($q, $countryId) =>
+                $q->where('country_id', $countryId)
+            )
+            ->when(
+                $filters['city_id'] ?? null,
+                fn($q, $cityId) =>
+                $q->where('city_id', $cityId)
+            )
+            ->when(
+                $filters['created_from'] ?? null,
+                fn($q, $date) =>
+                $q->whereDate('created_at', '>=', $date)
+            )
+            ->when(
+                $filters['created_to'] ?? null,
+                fn($q, $date) =>
+                $q->whereDate('created_at', '<=', $date)
+            )
+            ->when(
+                $filters['min_places'] ?? null,
+                fn($q, $count) =>
+                $q->has('places', '>=', $count)
+            )
+            ->when(
+                $filters['min_categories'] ?? null,
+                fn($q, $count) =>
+                $q->has('categories', '>=', $count)
+            )
+            ->when(
+                $filters['sort_by'] ?? null,
+                function ($q, $sortBy) use ($filters) {
 
-                        $direction = $filters['sort_direction'] ?? 'asc';
+                    $direction = $filters['sort_direction'] ?? 'asc';
 
-                        $allowed = ['name', 'created_at'];
+                    $allowed = ['name', 'created_at'];
 
-                        if (in_array($sortBy, $allowed)) {
-                            $q->orderBy($sortBy, $direction);
-                        }
+                    if (in_array($sortBy, $allowed)) {
+                        $q->orderBy($sortBy, $direction);
                     }
-                );
-            if (!empty($filters['pagination'])) {
-                return $query->cursorPaginate($filters['pagination'] ?? 15);
-            }
-            if (!empty($filters['limit'])) {
-                $query->limit($filters['limit']);
-            }
-            return $query->search($filters['search'] ?? null)->get()->toArray();
-        });
+                }
+            );
+        if (!empty($filters['pagination'])) {
+            return $query->cursorPaginate($filters['pagination'] ?? 15);
+        }
+        if (!empty($filters['limit'])) {
+            $query->limit($filters['limit']);
+        }
+        return $query->search($filters['search'] ?? null)->get()->toArray();
     }
 
     /**

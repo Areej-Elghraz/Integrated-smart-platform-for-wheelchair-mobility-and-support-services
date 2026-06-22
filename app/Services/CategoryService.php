@@ -179,140 +179,127 @@ class CategoryService
     /**
      * Get categories tree.
      */
-    public function getCategoriesTree(User $user, array $filters = [], array $with = []): array
+    public function getCategoriesTree(User $user, array $filters = [], array $with = [])
     {
+        $query = Category::accessibleBy($user)->with($with ?: []);
+        if ($user->isOrganization()) {
 
-        // dd(
-        //     Category::count(),
-        //     Category::whereNull('owner_id')->count(),
-        //     Category::whereNotNull('owner_id')->count()
-        // );
-        $cacheKey = 'categories_' . $user->id . '_' . md5(json_encode([
-            'filters' => $filters,
-            'with' => $with,
-        ]));
+            $org = $user->organizationRoleOrganization();
 
-        return Cache::remember($cacheKey, 3600, function () use ($user, $filters, $with) {
-            $query = Category::accessibleBy($user)->with($with ?: []);
-            if ($user->isOrganization()) {
+            if (!$org) { /// 
+                return collect();
+            }
 
-                $org = $user->organizationRoleOrganization();
-
-                if (!$org) { /// 
-                    return collect();
-                }
-
-                $query->where('owner_id', $user->id)
-                    ->whereHas('organizations', function ($q) use ($org) {
-                        $q->where('organizations.id', $org->id);
-                    });
-            } else {
-                $query->where(function ($q) use ($user) {
-
-                    $q->whereNull('owner_id') // main places
-
-                        ->orWhere('owner_id', $user->id) // created by the current user
-
-                        ->orWhereHas('owner', function ($q) {
-                            $q->where('role', UserRoleEnum::ORGANIZATION->value); // created by any organization
-                        });
+            $query->where('owner_id', $user->id)
+                ->whereHas('organizations', function ($q) use ($org) {
+                    $q->where('organizations.id', $org->id);
                 });
-            }
+        } else {
+            $query->where(function ($q) use ($user) {
 
-            $query
-                ->when(
-                    !empty($filters['main_only']),
+                $q->whereNull('owner_id') // main places
+
+                    ->orWhere('owner_id', $user->id) // created by the current user
+
+                    ->orWhereHas('owner', function ($q) {
+                        $q->where('role', UserRoleEnum::ORGANIZATION->value); // created by any organization
+                    });
+            });
+        }
+
+        $query
+            ->when(
+                !empty($filters['main_only']),
+                fn($q) =>
+                $q->whereNull('parent_id')
+            )
+            ->when(
+                $filters['organization_id'] ?? null,
+                fn($q, $orgId) =>
+                $q->whereHas(
+                    'organizations',
                     fn($q) =>
-                    $q->whereNull('parent_id')
+                    $q->where('organizations.id', $orgId)
                 )
-                ->when(
-                    $filters['organization_id'] ?? null,
-                    fn($q, $orgId) =>
-                    $q->whereHas(
-                        'organizations',
-                        fn($q) =>
-                        $q->where('organizations.id', $orgId)
-                    )
-                )
-                ->when(
-                    $filters['parent_id'] ?? null,
-                    fn($q, $parentId) =>
-                    $q->where('parent_id', $parentId)
-                )
-                ->when(
-                    !empty($filters['has_organizations']),
+            )
+            ->when(
+                $filters['parent_id'] ?? null,
+                fn($q, $parentId) =>
+                $q->where('parent_id', $parentId)
+            )
+            ->when(
+                !empty($filters['has_organizations']),
+                fn($q) =>
+                $q->has('organizations', '>=', 1)
+            )
+            // ->when(
+            //     $filters['owner_id'] ?? null,
+            //     fn($q, $ownerId) =>
+            //     $q->where('owner_id', $ownerId)
+            // )
+            ->when(
+                !empty($filters['has_places']),
+                fn($q) =>
+                $q->has('places')
+            )
+            ->when(
+                $filters['country_id'] ?? null,
+                fn($q, $countryId) =>
+                $q->whereHas(
+                    'organizations',
                     fn($q) =>
-                    $q->has('organizations', '>=', 1)
+                    $q->where('country_id', $countryId)
                 )
-                // ->when(
-                //     $filters['owner_id'] ?? null,
-                //     fn($q, $ownerId) =>
-                //     $q->where('owner_id', $ownerId)
-                // )
-                ->when(
-                    !empty($filters['has_places']),
+            )
+            ->when(
+                $filters['city_id'] ?? null,
+                fn($q, $cityId) =>
+                $q->whereHas(
+                    'organizations',
                     fn($q) =>
-                    $q->has('places')
+                    $q->where('city_id', $cityId)
                 )
-                ->when(
-                    $filters['country_id'] ?? null,
-                    fn($q, $countryId) =>
-                    $q->whereHas(
-                        'organizations',
-                        fn($q) =>
-                        $q->where('country_id', $countryId)
-                    )
-                )
-                ->when(
-                    $filters['city_id'] ?? null,
-                    fn($q, $cityId) =>
-                    $q->whereHas(
-                        'organizations',
-                        fn($q) =>
-                        $q->where('city_id', $cityId)
-                    )
-                )
-                ->when(
-                    $filters['created_from'] ?? null,
-                    fn($q, $date) =>
-                    $q->whereDate('created_at', '>=', $date)
-                )
-                ->when(
-                    $filters['created_to'] ?? null,
-                    fn($q, $date) =>
-                    $q->whereDate('created_at', '<=', $date)
-                )
-                ->when(
-                    $filters['min_places'] ?? null,
-                    fn($q, $count) =>
-                    $q->has('places', '>=', $count)
-                )
-                ->when(
-                    $filters['min_organizations'] ?? null,
-                    fn($q, $count) =>
-                    $q->has('organizations', '>=', $count)
-                )
-                ->when(
-                    $filters['sort_by'] ?? null,
-                    function ($q, $sortBy) use ($filters) {
+            )
+            ->when(
+                $filters['created_from'] ?? null,
+                fn($q, $date) =>
+                $q->whereDate('created_at', '>=', $date)
+            )
+            ->when(
+                $filters['created_to'] ?? null,
+                fn($q, $date) =>
+                $q->whereDate('created_at', '<=', $date)
+            )
+            ->when(
+                $filters['min_places'] ?? null,
+                fn($q, $count) =>
+                $q->has('places', '>=', $count)
+            )
+            ->when(
+                $filters['min_organizations'] ?? null,
+                fn($q, $count) =>
+                $q->has('organizations', '>=', $count)
+            )
+            ->when(
+                $filters['sort_by'] ?? null,
+                function ($q, $sortBy) use ($filters) {
 
-                        $direction = $filters['sort_direction'] ?? 'asc';
+                    $direction = $filters['sort_direction'] ?? 'asc';
 
-                        $allowed = ['name', 'created_at'];
+                    $allowed = ['name', 'created_at'];
 
-                        if (in_array($sortBy, $allowed)) {
-                            $q->orderBy($sortBy, $direction);
-                        }
+                    if (in_array($sortBy, $allowed)) {
+                        $q->orderBy($sortBy, $direction);
                     }
-                );
-            if (!empty($filters['pagination'])) {
-                return $query->cursorPaginate($filters['pagination'] ?? 20);
-            }
-            if (!empty($filters['limit'])) {
-                $query->limit($filters['limit']);
-            }
-            return $query->search($filters['search'] ?? null)->get()->toArray();
-        });
+                }
+            );
+        if (!empty($filters['pagination'])) {
+            return $query->cursorPaginate($filters['pagination'] ?? 20);
+        }
+        if (!empty($filters['limit'])) {
+            $query->limit($filters['limit']);
+        }
+        return $query->search($filters['search'] ?? null)->get()->toArray();
     }
     // public function getCategoriesTree(User $user, $organizationId = null, $parentId = null, array $with = [])
     // {

@@ -30,7 +30,7 @@ class AggregateSensorReadings implements ShouldQueue
         $startTime = $endTime->copy()->subMinutes(10);
 
         // Group by wheelchair_id and trip_id
-        $aggregations = SensorReading::whereBetween('reading_time', [$startTime, $endTime])
+        $aggregations = SensorReading::whereBetween('created_at', [$startTime, $endTime])
             ->select(
                 'wheelchair_id',
                 'trip_id',
@@ -66,6 +66,6 @@ class AggregateSensorReadings implements ShouldQueue
         }
 
         // Delete raw sensor readings older than 1 hour
-        SensorReading::where('reading_time', '<', now()->subHour())->delete();
+        SensorReading::where('created_at', '<', now()->subHour())->delete();
     }
 }

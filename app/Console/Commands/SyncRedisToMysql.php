@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Redis;
 use App\Models\SensorReading;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Carbon;
 
 class SyncRedisToMysql extends Command
 {
@@ -38,7 +39,7 @@ class SyncRedisToMysql extends Command
         // 2. Sync Movement States
         $this->syncMovementStates();
 
-        // 3. Sync Vital States
+        // 3. Sync Vital States (ai_recommendations table)
         $this->syncVitalStates();
 
         $this->info('Sync completed successfully.');
@@ -53,7 +54,16 @@ class SyncRedisToMysql extends Command
         while ($data = Redis::lpop($key)) {
             $parsed = json_decode($data, true);
             if ($parsed) {
-                // Ensure datetime formatting
+                // Convert ISO 8601 datetime to MySQL format
+                if (isset($parsed['reading_time'])) {
+                    try {
+                        $parsed['reading_time'] = Carbon::parse($parsed['reading_time'])->format('Y-m-d H:i:s');
+                    } catch (\Exception $e) {
+                        // If parsing fails, use current time
+                        $parsed['reading_time'] = now()->format('Y-m-d H:i:s');
+                    }
+                }
+
                 $parsed['created_at'] = now();
                 $parsed['updated_at'] = now();
                 $records[] = $parsed;
@@ -80,6 +90,9 @@ class SyncRedisToMysql extends Command
                     $parsed['position'] = json_encode($parsed['position']);
                 }
 
+                // Remove trip_id if present - this column doesn't exist in wheelchair_movement_states table
+                unset($parsed['trip_id']);
+
                 $parsed['created_at'] = now();
                 $parsed['updated_at'] = now();
                 $records[] = $parsed;
@@ -87,9 +100,8 @@ class SyncRedisToMysql extends Command
         }
 
         if (!empty($records)) {
-            // Upsert records based on wheelchair_id
+            // Upsert records based on wheelchair_id (without trip_id)
             DB::table('wheelchair_movement_states')->upsert($records, ['wheelchair_id'], [
-                'trip_id',
                 'movement_status',
                 'speed',
                 'position',
@@ -120,8 +132,8 @@ class SyncRedisToMysql extends Command
         }
 
         if (!empty($records)) {
-            // Upsert records based on wheelchair_id
-            DB::table('current_vital_states')->upsert($records, ['wheelchair_id'], [
+            // Upsert records into ai_recommendations table (replaces old current_vital_states)
+            DB::table('ai_recommendations')->upsert($records, ['wheelchair_id'], [
                 'heart_rate',
                 'heart_rate_status',
                 'temperature',

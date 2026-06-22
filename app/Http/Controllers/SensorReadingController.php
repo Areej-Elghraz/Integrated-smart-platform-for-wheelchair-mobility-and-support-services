@@ -7,6 +7,8 @@ use App\Models\Wheelchair;
 use App\Http\Requests\Wheelchair\StoreSensorReadingRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Redis;
 
 class SensorReadingController extends ApiController
 {
@@ -27,6 +29,7 @@ class SensorReadingController extends ApiController
 
     /**
      * Store new sensor readings from the hardware.
+     * BEST PRACTICE: High-frequency IoT data is buffered in Redis to protect MySQL.
      */
     public function store(StoreSensorReadingRequest $request): JsonResponse
     {
@@ -37,10 +40,13 @@ class SensorReadingController extends ApiController
 
         $validated = $request->validated();
 
-        // Auto-detect active trip
         $activeTrip = \App\Models\Trip::where('wheelchair_id', $wheelchair->id)
             ->where('status', 'started')
             ->first();
+
+        $readingTime = isset($validated['reading_time'])
+            ? Carbon::parse($validated['reading_time'])->format('Y-m-d H:i:s')
+            : now()->format('Y-m-d H:i:s');
 
         $readingData = [
             'wheelchair_id'   => $wheelchair->id,
@@ -54,20 +60,25 @@ class SensorReadingController extends ApiController
             'mpu_angle_min'   => $validated['mpu_angle_min'] ?? null,
             'mpu_angle_max'   => $validated['mpu_angle_max'] ?? null,
             'mpu_angle_avg'   => $validated['mpu_angle_avg'] ?? null,
-            'reading_time'    => $validated['reading_time'],
+            'reading_time'    => $readingTime,
         ];
 
         $warning = null;
         try {
-            \Illuminate\Support\Facades\Redis::rpush('buffer:sensor_readings', json_encode($readingData));
+            // 1. Buffer in Redis for the 5-minute bulk sync to MySQL
+            Redis::rpush('buffer:sensor_readings', json_encode($readingData));
+            
+            // 2. Save the absolute latest reading to a dedicated Redis key for real-time dashboard display
+            Redis::set("latest_sensor_reading:{$wheelchair->id}", json_encode($readingData));
+            
         } catch (\Exception $e) {
-            $warning = 'Redis connection failed. Falling back to MySQL direct insert.';
+            $warning = 'Redis unavailable. Falling back to direct MySQL insert.';
             SensorReading::create($readingData);
         }
 
         return $this->successResponse('Sensor reading processed successfully.', parameters: [
-            'data' => $readingData,
-            'warning' => $warning
+            'data'    => $readingData,
+            'warning' => $warning,
         ]);
     }
 }

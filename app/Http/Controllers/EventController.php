@@ -58,10 +58,16 @@ class EventController extends ApiController
         );
 
         if ($existingEvent) {
-            // Update timestamp of the existing unresolved event
-            $existingEvent->touch();
+            // Update the message and data with the latest readings for the ongoing incident
+            $existingEvent->update([
+                'message' => $validated['message'],
+                'data' => $validated['data'],
+            ]);
 
-            return $this->successResponse('Event deduplicated (updated timestamp).', parameters: ['data' => $existingEvent]);
+            // Broadcast the updated event to the frontend
+            broadcast(new WheelchairEventOccurred($existingEvent));
+
+            return $this->successResponse('Event deduplicated (updated data and timestamp).', parameters: ['data' => $existingEvent]);
         }
 
         // Otherwise create new event

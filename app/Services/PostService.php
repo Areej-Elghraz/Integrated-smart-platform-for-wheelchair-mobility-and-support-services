@@ -17,47 +17,44 @@ class PostService
 
     public function getPosts(?User $currentUser, array $filters = [], array $with = []): array
     {
-        $cacheKey = 'posts_' . md5(json_encode(['current_user' => $currentUser?->id, 'filters' => $filters, 'with' => $with]));
-
-        return Cache::remember($cacheKey, 3600, function () use ($currentUser, $filters, $with) {
-            $query = Post::with($with)
-                ->withCount(['likes', 'comments', 'sharedPosts as shares_count'])
-                ->when(empty($filters['user_id']) && $currentUser, function ($q) use ($currentUser) {
-                    $q->whereDoesntHave('hiddenBy', function ($sub) use ($currentUser) {
-                        $sub->where('user_id', $currentUser->id);
-                    });
-                })
-                ->when($filters['user_id'] ?? null, function ($q, $userId) {
-                    $q->where('user_id', $userId);
-                })
-                ->when($filters['content'] ?? null, function ($q, $content) {
-                    $q->where('content', 'like', "%{$content}%");
-                })
-                ->when($filters['search'] ?? null, function ($q, $search) {
-                    $q->where('content', 'like', "%{$search}%");
-                })
-                ->when($filters['created_from'] ?? null, fn($q, $date) => $q->whereDate('created_at', '>=', $date))
-                ->when($filters['created_to'] ?? null, fn($q, $date) => $q->whereDate('created_at', '<=', $date))
-                ->when(
-                    $filters['sort_by'] ?? null,
-                    function ($q, $sort) use ($filters) {
-                        $dir = $filters['sort_direction'] ?? 'desc';
-                        if (in_array($sort, ['created_at', 'likes_count', 'comments_count', 'shares_count'])) {
-                            $q->orderBy($sort, $dir);
-                        }
-                    },
-                    function ($q) {
-                        $q->latest();
+        $query = Post::with($with)
+            ->withCount(['likes', 'comments', 'sharedPosts as shares_count'])
+            ->when(empty($filters['user_id']) && $currentUser, function ($q) use ($currentUser) {
+                $q->whereDoesntHave('hiddenBy', function ($sub) use ($currentUser) {
+                    $sub->where('user_id', $currentUser->id);
+                });
+            })
+            ->when($filters['user_id'] ?? null, function ($q, $userId) {
+                $q->where('user_id', $userId);
+            })
+            ->when($filters['content'] ?? null, function ($q, $content) {
+                $q->where('content', 'like', "%{$content}%");
+            })
+            ->when($filters['search'] ?? null, function ($q, $search) {
+                $q->where('content', 'like', "%{$search}%");
+            })
+            ->when($filters['created_from'] ?? null, fn($q, $date) => $q->whereDate('created_at', '>=', $date))
+            ->when($filters['created_to'] ?? null, fn($q, $date) => $q->whereDate('created_at', '<=', $date))
+            ->when(
+                $filters['sort_by'] ?? null,
+                function ($q, $sort) use ($filters) {
+                    $dir = $filters['sort_direction'] ?? 'desc';
+                    if (in_array($sort, ['created_at', 'likes_count', 'comments_count', 'shares_count'])) {
+                        $q->orderBy($sort, $dir);
                     }
-                );
+                },
+                function ($q) {
+                    $q->latest();
+                }
+            );
 
-            $paginator = $query->cursorPaginate($filters['pagination'] ?? 15);
-            return [
-                'posts'       => \App\Http\Resources\PostResource::collection($paginator->getCollection())->resolve(),
-                'next_cursor' => $paginator->nextCursor()?->encode(),
-                'prev_cursor' => $paginator->previousCursor()?->encode(),
-            ];
-        });
+        $paginator = $query->cursorPaginate($filters['pagination'] ?? 15);
+        
+        return [
+            'posts'       => \App\Http\Resources\PostResource::collection($paginator->getCollection())->resolve(),
+            'next_cursor' => $paginator->nextCursor()?->encode(),
+            'prev_cursor' => $paginator->previousCursor()?->encode(),
+        ];
     }
 
     public function getPost(Post $post): array

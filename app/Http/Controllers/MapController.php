@@ -111,7 +111,11 @@ class MapController extends ApiController
             $this->logAdminAction('created', $map);
         }
 
-        broadcast(new \App\Events\MapUploaded($map))->toOthers();
+        try {
+            broadcast(new \App\Events\MapUploaded($map))->toOthers();
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Broadcast error in MapController: ' . $e->getMessage());
+        }
 
         return $this->successResponse(
             message: __('messages.actions.created_success', ['resource' => __('messages.resources.map.singular')]),

@@ -244,27 +244,36 @@ class PlaceService
      */
     public function getFavorites(User $user, array $filters = [], array $with = [])
     {
-        $cacheKey = 'favorites_' . $user->id . '_' . md5(json_encode([
-            'filters' => $filters,
-            'with'    => $with,
-        ]));
+        $type = $filters['type'] ?? 'all';
 
-        return Cache::remember($cacheKey, 3600, function () use ($user, $filters, $with) {
-            $query = $user->favorites()->with($with ?: []);
+        if ($type === 'places') {
+            $query = $user->favoritePlaces()->with($with ?: []);
+            return $this->paginateOrGetFavorites($query, $filters);
+        } elseif ($type === 'organizations') {
+            $query = $user->favoriteOrganizations()->with($with ?: []);
+            return $this->paginateOrGetFavorites($query, $filters);
+        } else {
+            return [
+                'places' => $this->paginateOrGetFavorites($user->favoritePlaces()->with($with ?: []), $filters),
+                'organizations' => $this->paginateOrGetFavorites($user->favoriteOrganizations()->with($with ?: []), $filters)
+            ];
+        }
+    }
 
-            if (!empty($filters['pagination'])) {
-                $paginated = $query->paginate((int) $filters['pagination'] ?: 15);
-                return [
-                    'data' => $paginated->items(),
-                    'total' => $paginated->total(),
-                ];
-            }
-            if (!empty($filters['limit'])) {
-                $query->limit($filters['limit']);
-            }
+    private function paginateOrGetFavorites($query, $filters)
+    {
+        if (!empty($filters['pagination'])) {
+            $paginated = $query->paginate((int) $filters['pagination'] ?: 15);
+            return [
+                'data' => $paginated->items(),
+                'total' => $paginated->total(),
+            ];
+        }
+        if (!empty($filters['limit'])) {
+            $query->limit($filters['limit']);
+        }
 
-            return $query->get();
-        });
+        return $query->get();
     }
 
     /**

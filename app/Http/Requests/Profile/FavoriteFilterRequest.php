@@ -22,6 +22,7 @@ class FavoriteFilterRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'type'            => 'sometimes|string|in:places,organizations,all',
             'pagination'      => 'sometimes|integer|min:1|max:100',
             'limit'           => 'sometimes|integer|min:1|max:100',
         ];

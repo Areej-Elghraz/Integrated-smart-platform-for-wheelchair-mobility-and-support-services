@@ -162,7 +162,11 @@ class User extends Authenticatable implements FilamentUser
 
     public function getAgeAttribute(): ?int
     {
-        return $this->birth_date ? \Carbon\Carbon::parse($this->birth_date)->age : null;
+        try {
+            return $this->birth_date ? \Carbon\Carbon::parse($this->birth_date)->age : null;
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 
     public function getImageAttribute($value)

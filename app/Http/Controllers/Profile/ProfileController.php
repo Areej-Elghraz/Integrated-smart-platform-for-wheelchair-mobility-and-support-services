@@ -16,7 +16,8 @@ class ProfileController extends ApiController
     {
         $user = Auth::user()->load([
             'medicalConditions',
-            'friends',
+            'friendsOfMine',
+            'friendOf',
             'organizations',
             'wheelchairs'
         ]);

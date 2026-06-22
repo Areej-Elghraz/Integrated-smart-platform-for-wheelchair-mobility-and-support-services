@@ -124,6 +124,10 @@ class PlaceController extends ApiController
 
         $place = $this->placeService->getPlace($id, $with);
 
+        if (!$place) {
+            return $this->errorResponse(__('messages.404_not_found', ['model' => __('messages.resources.place.singular') ?? 'Place']), 404);
+        }
+
         $this->authorize('view', $place);
 
         return $this->successResponse(

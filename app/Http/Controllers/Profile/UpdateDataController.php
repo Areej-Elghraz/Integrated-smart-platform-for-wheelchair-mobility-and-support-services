@@ -45,7 +45,8 @@ class UpdateDataController extends ApiController
 
         $user->refresh()->load([
             'medicalConditions',
-            'friends',
+            'friendsOfMine',
+            'friendOf',
             'organizations',
             'wheelchairs'
         ]);

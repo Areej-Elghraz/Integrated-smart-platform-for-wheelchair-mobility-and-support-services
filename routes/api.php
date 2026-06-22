@@ -26,7 +26,7 @@ Route::post('/login', LoginController::class)->name('auth.login');
 Route::post('/refresh-token', RefreshTokenController::class)->name('auth.refresh-token')->middleware(['auth:sanctum', 'ability:' . TokenAbilityEnum::REMEMBER_TOKEN->value]);
 
 Route::post('/verify-otp', \App\Http\Controllers\Auth\VerifyOtpController::class)->name('auth.verify-otp');
-Route::post('/resend-otp', \App\Http\Controllers\Auth\ForgotPasswordController::class)->name('auth.forgot-password');
+Route::post('/resend-otp', \App\Http\Controllers\Auth\ForgotPasswordController::class)->name('auth.resend-otp');
 Route::post('/forgot-password', \App\Http\Controllers\Auth\ForgotPasswordController::class)->name('auth.forgot-password');
 Route::post('/reset-password', \App\Http\Controllers\Auth\ResetPasswordController::class)->name('auth.reset-password');
 

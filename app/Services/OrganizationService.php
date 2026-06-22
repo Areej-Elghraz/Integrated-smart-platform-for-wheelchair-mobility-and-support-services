@@ -159,39 +159,6 @@ class OrganizationService
      */
     public function getVisibleOrganizations(User $user, array $filters = [], array $with = []): array
     {
-        // $cacheKey = implode('_', [
-        //     'user_' . $user->id,
-        //     'organization',
-        // ]);
-        // return Cache::
-
-        $cacheKey = 'organizations_' . $user->id . '_' . md5(json_encode([
-            'filters' => $filters,
-            'with'    => $with,
-        ]));
-
-        // return Cache::remember($cacheKey, 3600, function () use ($user, $filters, $with) {
-        //     // if ($user->isUser()) {
-        //     //     return Organization::where('owner_id', $user->id)
-        //     //         ->orWhereHas('owner', function ($query) {
-        //     //             $query->where('role', \App\Enums\UserRoleEnum::ORGANIZATION->value);
-        //     //         })->get();
-        //     // }
-        //     // return $user->organizations;
-
-        //     // if ($user->isOrganization()) {
-        //     //     $query = $user->organizations()->getQuery(); // get the base query
-        //     // } else {
-        //     //     $query = Organization::where('owner_id', $user->id)
-        //     //         ->orWhereHas('owner', function ($query) {
-        //     //             $query->where('role', UserRoleEnum::ORGANIZATION->value);
-        //     //         });
-        //     // }
-        //     // return $query->with($with)->get();
-        // });
-
-    public function getVisibleOrganizations(?User $user, array $filters = [], array $with = [])
-    {
         $query = Organization::accessibleBy($user)->with($with ?: []);
 
         $query
